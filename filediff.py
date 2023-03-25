@@ -1,7 +1,7 @@
 import difflib
 
-directory1='/Users/shrinix/git/medium/Document Similarities/'
-directory2='/Users/shrinix/git/medium/Document Similarities/'
+directory1='./'
+directory2='./'
 
 file1 = 'orig.drl' #'Document1.txt'
 file2 = 'gen.drl' #'Document2.txt'
