@@ -1,0 +1,30 @@
+<div class="chat-container">
+  <div class="messages">
+    <div *ngFor="let message of messages">
+      <p>{{message.sender}}: {{message.content}}</p>
+    </div>
+  </div>
+  <div class="flex-container">
+    <div class="panel">
+      <div class="messages">
+        <div *ngFor="let message of messages">
+          <p>{{message.sender}}: {{message.content}}</p>
+        </div>
+      </div>
+      <div>
+        <div class="input-container">
+          <input [(ngModel)]="topic" placeholder="Type a joke topic..." (keyup.enter)="generateJoke(topic)">
+          <button class="chat-button" (click)="generateJoke(topic)">Send</button>
+        </div>
+        <div class="response-box">{{ chat_response }}</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="input-container">
+        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)">
+        <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
+      </div>
+      <div class="response-box">{{ chat_answer }}</div>
+    </div>
+  </div>
+</div>

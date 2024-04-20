@@ -1,0 +1,20 @@
+name: tensorflow-development
+channels:
+- anaconda
+- conda-forge
+- defaults
+ 
+dependencies:
+ - python=3.7
+ - numpy
+ - matplotlib
+ - requests
+ - seaborn
+ - scikit-learn
+ - statsmodels
+ - pandas
+ - keras
+ - tensorflow
+ - notebook
+ - nb_conda_kernels
+ - jupyter_contrib_nbextensions
