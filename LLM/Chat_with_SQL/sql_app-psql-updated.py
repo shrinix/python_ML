@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from langchain_community.llms import CTransformers
 from langchain.sql_database import SQLDatabase
 from langchain_experimental.sql import SQLDatabaseChain
@@ -11,8 +13,9 @@ from langchain.agents.agent_types import AgentType
 from langchain_community.chat_models import ChatOllama
 import re
 from db_connectors import PostgresConnector
-import psycopg2
 from tabulate import tabulate
+from db_schema import get_db_schema
+from pglast.parser import parse_sql, ParseError
 
 def generate_prompt(question, prompt_file="prompt.md", metadata_file="metadata.sql"):
     with open(prompt_file, "r") as f:
@@ -32,6 +35,7 @@ def generate_prompt(question, prompt_file="prompt.md", metadata_file="metadata.s
 
 def query_model(question, llm):
     prompt = generate_prompt(question)
+    pprint(prompt)
 
     output_parser = StrOutputParser()
 
@@ -60,21 +64,37 @@ def execute_query(query, cur):
     headers = [desc[0] for desc in cur.description]
     return tabulate(rows, headers=headers, tablefmt="grid")
 
-def main():
+def is_valid_query(query: str) -> bool:
+    """Validates query syntax using Postgres parser.
 
-    # llm = CTransformers(model="//Users//shriniwasiyengar//.cache//lm-studio//models//TheBloke//nsql-llama-2-7B-GGUF",
-    #                     model_type="llama",
-    #                     config={'max_new_tokens': 512,
-    #                             'temperature': 0.01,
-    #                             'context_length': 6000})
+    Note: in this context, "invalid" includes a query that is empty or only a
+    SQL comment, which is different from the typical sense of "valid Postgres".
+    """
+    parse_result = None
+    valid = True
+    try:
+        parse_result = parse_sql(query)
+    except ParseError as e:
+        valid = False
+    # Check for any empty result (occurs if completion is empty or a comment)
+    return parse_result and valid
+
+import re
+
+import re
+
+def extract_select_statement(text):
+    pattern = r"(SELECT.*?);"
+    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1)
+    else:
+        return None
+
+def main():
 
     # Defining the models to be used
     LLM = ChatOllama(model='sqlcoder')
-    #llm = ChatOllama(model='sqlcoder', config={'max_new_tokens': 512, 'temperature': 0.01, 'context_length': 6000})
-
-    from huggingface_hub import snapshot_download
-    # model_path = snapshot_download(repo_id="defog/sqlcoder-7b-2", repo_type="model",
-    #                                local_dir="../models/sqlcoder-7b-2", local_dir_use_symlinks=False)
     host = 'localhost'
     port = '5432'
     username = 'postgres'
@@ -95,23 +115,6 @@ def main():
     print("Type your message and press Enter to get a response.")
     print("Type 'exit' to quit.")
 
-    # conn = psycopg2.connect(
-    #     dbname="yelp",
-    #     user="postgres",
-    #     password="postgres",
-    #     host="localhost",
-    #     port="5432"
-    # )
-    # cur = conn.cursor()
-    #
-
-    # from llama_cpp import Llama
-    import psycopg2
-    from tabulate import tabulate
-
-    #LLM = Llama(model_path="/Users/shriniwasiyengar/Downloads/sqlcoder-7b-q5_k_m.gguf", n_gpu_layers=10, n_ctx=2048,
-     #           verbose=False)
-
     while True:
         user_input = input("Question: ")
         if user_input.lower() == 'exit':
@@ -122,6 +125,26 @@ def main():
         print("Answer: ")
         response = query_model(user_input, LLM)
         print(response)
+
+        #Query validation using pglast
+        query = extract_select_statement(response)
+        print(query)
+        valid = is_valid_query(query)
+
+        if(valid):
+            print("Valid query")
+            # execute_query(query, cur)
+        else:
+            print("Invalid query")
+
+        # import psycopg2
+        # conn = psycopg2.connect(
+        #     dbname=mydatabase,
+        #     user=username,
+        #     password=password,
+        #     host="localhost",
+        #     port="5432"
+        # )
 
 if __name__ == "__main__":
     main()

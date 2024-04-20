@@ -1,4 +1,4 @@
-REATE TABLE actor (
+CREATE TABLE actor (
 	actor_id SERIAL NOT NULL,
 	first_name VARCHAR(45) NOT NULL,
 	last_name VARCHAR(45) NOT NULL,
@@ -148,4 +148,23 @@ CREATE TABLE store (
 	CONSTRAINT store_manager_staff_id_fkey FOREIGN KEY(manager_staff_id) REFERENCES staff (staff_id) ON DELETE RESTRICT ON UPDATE CASCADE
 )
 
+-- address.city_id can be joined with city.city_id
 -- city.country_id can be joined with country.country_id
+-- customer.address_id can be joined with address.address_id
+-- film.language_id can be joined with language.language_id
+-- film_actor.actor_id can be joined with actor.actor_id
+-- film_actor.film_id can be joined with film.film_id
+-- film_category.category_id can be joined with category.category_id
+-- film_category.film_id can be joined with film.film_id
+-- inventory.film_id can be joined with film.film_id
+-- inventory.store_id can be joined with store.store_id
+-- payment.customer_id can be joined with customer.customer_id
+-- payment.rental_id can be joined with rental.rental_id
+-- payment.staff_id can be joined with staff.staff_id
+-- rental.customer_id can be joined with customer.customer_id
+-- rental.inventory_id can be joined with inventory.inventory_id
+-- rental.staff_id can be joined with staff.staff_id
+-- staff.address_id can be joined with address.address_id
+-- store.address_id can be joined with address.address_id
+-- store.manager_staff_id can be joined with staff.staff_id
+

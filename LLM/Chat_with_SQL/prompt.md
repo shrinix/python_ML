@@ -1,5 +1,5 @@
 ### Task
-Generate a SQL query to answer [QUESTION]{user_question}[/QUESTION]
+Generate a PostgresSQL query to answer [QUESTION]{user_question}[/QUESTION]
 
 ### Instructions
 - If you cannot answer the question with the available database schema, return 'I do not know'
