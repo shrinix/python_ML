@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ChatResponse } from './chatresponse';
 import { HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
+import { ChatMessage } from './chat.component';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { map } from 'rxjs/operators';
 export class ChatService {
 
   private baseURL = "http://localhost:8080";
+  messages: ChatMessage[] = [];
 
   constructor(private httpClient: HttpClient) { }
   
@@ -29,12 +31,7 @@ export class ChatService {
     return this.httpClient.get<ChatResponse>(`${this.baseURL}/generate?userMessage=${question}`);
   }
 
-  getJokeByTopic(topic: string): Observable<ChatResponse> {
-    console.log (`${this.baseURL}/generate/joke/${topic}`);
-    const headers = new HttpHeaders().set('Access-Control-Allow-Origin', '*')
-    .set('Origin', 'http://localhost:4200'); // replace with the actual origin of your client application
-
-    return this.httpClient.get<ChatResponse>(`${this.baseURL}/generate/joke/${topic}`, { headers });
+  addMessage(message: ChatMessage) {
+    this.messages.push(message);
   }
-
 }

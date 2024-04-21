@@ -1,11 +1,10 @@
 .panel {
-    flex: 1 1 400px; // Increase the flex-basis value to 400px for width
-    height: 500px; // Add this to set a height for the panels
+    flex: 1 1 600px; // Increase the flex-basis value to increase width
+    height: 700px; // Add this to set a height for the panels
     margin: 10px;
     padding: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border: 1px solid #000; // Add this to add a border to each panel
-    overflow-y: auto; // Add this to add a vertical scrollbar when the content overflows
   }
 
  .input-container input {
@@ -17,11 +16,16 @@
 .response-box {
     flex-grow: 1; // Add this to make the response boxes take up the remaining space
     border: 1px solid #000;
-    padding: 10px;
-    margin: 10px; // Add margin to all sides
+    padding: 0px;
+    margin: 0px; // Add margin to all sides
     display: block; // Change to block to take up full width
     min-width: 200px;
-    height: 400px; // Add this to increase the height of the response boxes
+    height: 92%; // Add this to increase the height of the response boxes
+    overflow-y: auto; // Add this to add a vertical scrollbar when the content overflows
+}
+.response-box p {
+    margin: 0; /* Remove margin */
+    padding: 0; /* Remove padding */
 }
 
 .chat-button {
