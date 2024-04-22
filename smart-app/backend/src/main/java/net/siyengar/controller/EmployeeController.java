@@ -74,15 +74,9 @@ public class EmployeeController {
 		return chatLanguageModel;
 	}
 	
-    public EmployeeController(EmployeeService employeeService) {
-		this.employeeService = employeeService;
-		assert employeeService != null;
-		
-//Convert below code to use environment variable for apiKey
-
-		ChatLanguageModel chatLanguageModel = createChatLanguageModel(ModelType.OPENAI);
-		this.assistant = AiServices.builder(CustomerSupportAgent.class)
-			.chatLanguageModel(OpenAiChatModel.builder()
+	private CustomerSupportAgent createAssistant(ChatLanguageModel chatLanguageModel) {
+		AiServices.builder(CustomerSupportAgent.class)
+		.chatLanguageModel(OpenAiChatModel.builder()
 				.apiKey(System.getenv("API_KEY")) // use environment variable for apiKey
 				.timeout(ofSeconds(60))
 				.temperature(0.0)
@@ -90,6 +84,18 @@ public class EmployeeController {
 			.tools(new EmployeeTools(employeeService))
 			.chatMemory(MessageWindowChatMemory.withMaxMessages(10))
 			.build();
+		System.out.println("Finished creating CustomerSupportAgent bean");
+		return assistant;
+	}
+
+
+    public EmployeeController(EmployeeService employeeService) {
+		this.employeeService = employeeService;
+		assert employeeService != null;
+		
+		ChatLanguageModel chatLanguageModel = createChatLanguageModel(ModelType.OPENAI);
+		this.assistant = createAssistant(chatLanguageModel);
+			
 		System.out.println("Finished creating CustomerSupportAgent bean");
     }
 
