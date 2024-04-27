@@ -28,10 +28,6 @@ export class ChatComponent {
     //this.loadChatHistory();
   }
   ngOnInit(): void {
-    // this.topic = this.route.snapshot.params['topic'];
-    // this.question = this.route.snapshot.params['question'];
-    // this.generateJoke(this.topic);
-    // this.generateAnswer(this.question);
   }
 
   generateAnswer(question: string) {
@@ -40,6 +36,10 @@ export class ChatComponent {
       console.log('response: ' + response.message);
       this.chat_answer = response.message;
       
+      // Format the bot response into a multiline format if it contains a numbered list
+      const items = this.chat_answer.split(/(?=\d+\.)/g);
+      this.chat_answer = items.join('\n');
+
       const timestamp = new Date().toLocaleString(undefined, {timeZoneName: 'short'});
       const sequence = this.messages.length + 1;
       const userMessage: ChatMessage = {sender: 'User', content: this.question, timestamp, sequence }
@@ -50,6 +50,7 @@ export class ChatComponent {
       
       this.chatService.addMessage(userMessage);
       this.chatService.addMessage(botMessage);
+      this.scrollToBottom()
     },
       (error: any) => {
         console.error('Error:', error);

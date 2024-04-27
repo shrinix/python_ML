@@ -14,8 +14,9 @@ import java.util.List;
 public class AiServicesDemo {
 
     public static void main(String[] args) {
-        String openAiKey = "";
-        //String openAiKey = System.getenv("OPENAI_API_KEY");
+
+        String openAiKey = System.getenv("API_KEY");
+    
         ChatLanguageModel model = OpenAiChatModel.withApiKey(openAiKey);
 
         //basicAiService(model);

@@ -75,16 +75,20 @@ public class EmployeeController {
 	}
 	
 	private CustomerSupportAgent createAssistant(ChatLanguageModel chatLanguageModel) {
-		AiServices.builder(CustomerSupportAgent.class)
+
+		EmployeeTools employeeTools = new EmployeeTools(employeeService);
+		System.out.println("Finished creating CustomerSupportAgent bean");
+
+		CustomerSupportAgent assistant = AiServices.builder(CustomerSupportAgent.class)
 		.chatLanguageModel(OpenAiChatModel.builder()
 				.apiKey(System.getenv("API_KEY")) // use environment variable for apiKey
 				.timeout(ofSeconds(60))
 				.temperature(0.0)
 				.build())
-			.tools(new EmployeeTools(employeeService))
+			.tools(employeeTools)
 			.chatMemory(MessageWindowChatMemory.withMaxMessages(10))
 			.build();
-		System.out.println("Finished creating CustomerSupportAgent bean");
+		System.out.println("Finished creating chat language model");
 		return assistant;
 	}
 

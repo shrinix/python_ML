@@ -25,12 +25,15 @@ public interface CustomerSupportAgent {
             1. First Name
             2. Last Name
             3. Email ID
+            Email ID must be in the format: <first name>.<last name>@<domain string>
 
             To modify or delete an existing employee, the user must provide the following details:
             First Name or Last Name or Email ID. 
             Based on the input provided by the user, you must first retrieve the employee details and then modify or 
             delete the employee using the employee id.
             Before deleting the employee, you should retrieve and show the details of the employee to the user and ask the user to confirm the deletion.
+            
+            Before answering any query, make sure to refresh the list of employees.
             
             If you don't know how to help the customer, ask your supervisor for help.
         """
