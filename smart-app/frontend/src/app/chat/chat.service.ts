@@ -5,16 +5,20 @@ import { ChatResponse } from './chatresponse';
 import { HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { ChatMessage } from './chat.component';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
 
-  private baseURL = "http://localhost:8080";
-  messages: ChatMessage[] = [];
+  private baseURL: string;
 
-  constructor(private httpClient: HttpClient) { }
+  constructor(private httpClient: HttpClient) {
+    this.baseURL = environment.baseURL;
+  }
+
+  messages: ChatMessage[] = [];
   
   @Injectable({
     providedIn: 'root'
