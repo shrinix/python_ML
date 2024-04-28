@@ -17,7 +17,7 @@ import net.siyengar.agent.EmployeeTools;
 
 @EnableJpaRepositories("net.siyengar.repository")
 @SpringBootApplication(scanBasePackages={"net.siyengar.controller", "net.siyengar.service", "net.siyengar.repository", "net.siyengar.exception",
-  "net.siyengar.model", "net.siyengar.agent"})
+  "net.siyengar.model", "net.siyengar.agent", "net.siyengar.config"})
 public class SpringbootBackendApplication {
 
 	public static void main(String[] args) {
