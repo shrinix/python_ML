@@ -25,6 +25,7 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
 import net.siyengar.agent.CustomerSupportAgent;
 import net.siyengar.agent.EmployeeTools;
+import net.siyengar.agent.EmployeeToolsREST;
 import net.siyengar.model.Employee;
 import net.siyengar.model.ChatResponse;
 import net.siyengar.service.EmployeeService;
@@ -80,7 +81,7 @@ public class EmployeeController {
 	
 	private CustomerSupportAgent createAssistant(ChatLanguageModel chatLanguageModel) {
 
-		EmployeeTools employeeTools = new EmployeeTools(employeeService);
+		EmployeeToolsREST employeeToolsRest = new EmployeeToolsREST(this);
 		System.out.println("Finished creating CustomerSupportAgent bean");
 
 		CustomerSupportAgent assistant = AiServices.builder(CustomerSupportAgent.class)
@@ -89,7 +90,7 @@ public class EmployeeController {
 				.timeout(ofSeconds(60))
 				.temperature(0.0)
 				.build())
-			.tools(employeeTools)
+			.tools(employeeToolsRest)
 			.chatMemory(MessageWindowChatMemory.withMaxMessages(10))
 			.build();
 		System.out.println("Finished creating chat language model");

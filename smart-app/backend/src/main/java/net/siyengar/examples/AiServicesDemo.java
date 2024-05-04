@@ -1,4 +1,4 @@
-package net;
+package net.siyengar.examples;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.input.structured.StructuredPrompt;
