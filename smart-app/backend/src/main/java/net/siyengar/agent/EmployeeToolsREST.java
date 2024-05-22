@@ -20,14 +20,13 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class EmployeeToolsREST {
 
-   private final EmployeeController employeeController;
+   //private final EmployeeController employeeController;
    private static final String BASE_URL = "http://localhost:8080/employees"; // Replace with your baseURL
 
    private RestTemplate restTemplate;
 
-    public EmployeeToolsREST(EmployeeController employeeController) {
+    public EmployeeToolsREST() {
         System.out.println("EmployeeToolsREST constructor");     
-        this.employeeController = employeeController;
         this.restTemplate = new RestTemplate();
     }
 

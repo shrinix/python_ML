@@ -81,7 +81,7 @@ public class EmployeeController {
 	
 	private CustomerSupportAgent createAssistant(ChatLanguageModel chatLanguageModel) {
 
-		EmployeeToolsREST employeeToolsRest = new EmployeeToolsREST(this);
+		EmployeeToolsREST employeeToolsRest = new EmployeeToolsREST();
 		System.out.println("Finished creating CustomerSupportAgent bean");
 
 		CustomerSupportAgent assistant = AiServices.builder(CustomerSupportAgent.class)
