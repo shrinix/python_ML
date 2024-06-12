@@ -103,8 +103,8 @@ public class EmployeeController {
 		this.employeeService = employeeService;
 		assert employeeService != null;
 		
-		ChatLanguageModel chatLanguageModel = createChatLanguageModel(ModelType.OPENAI);
-		this.assistant = createAssistant(chatLanguageModel);
+		// ChatLanguageModel chatLanguageModel = createChatLanguageModel(ModelType.OPENAI);
+		// this.assistant = createAssistant(chatLanguageModel);
 			
 		System.out.println("Finished creating CustomerSupportAgent bean");
     }
@@ -130,7 +130,10 @@ public class EmployeeController {
 	// create employee rest api
 	@PostMapping("/employees")
 	public Employee createEmployee(@RequestBody Employee employee) {
-		return employeeService.saveEmployee(employee);
+		System.out.println("Employee to be created: "+employee.toString());
+		Employee createdEmployee = employeeService.saveEmployee(employee);
+		System.out.println("Employee created successfully: "+createdEmployee.toString());
+		return createdEmployee;
 	}
 	
 	// get employee by id rest api

@@ -1,21 +1,12 @@
 package net.siyengar.examples.vectordb;
 
-import org.springframework.ai.embedding.EmbeddingClient;
-import org.springframework.ai.embedding.EmbeddingRequest;
-import org.springframework.ai.reader.TextReader;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
-import org.springframework.ai.vectorstore.VectorStore;
 import dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel; 
-import org.springframework.ai.reader.TextReader;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.testcontainers.chromadb.ChromaDBContainer;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
+//import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,41 +66,41 @@ public class VectorSearch {
     //     List<Double> embeddings3 = embeddingResponse.getResult().getOutput();
     // }
 
-    public static void main(String[] args) {
+    // public static void main(String[] args) {
         
-        try {
-            Properties properties = new Properties();
-            try (InputStream inputStream = ChromaDBClient.class.getClassLoader().getResourceAsStream("application.properties")) {
-                properties.load(inputStream);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            String chromaUrl = properties.getProperty("CHROMA_URL");
+    //     try {
+    //         Properties properties = new Properties();
+    //         try (InputStream inputStream = VectorSearch.class.getClassLoader().getResourceAsStream("application.properties")) {
+    //             properties.load(inputStream);
+    //         } catch (IOException e) {
+    //             e.printStackTrace();
+    //         }
+    //         String chromaUrl = properties.getProperty("CHROMA_URL");
             
-            EmbeddingStore<TextSegment> embeddingStore = ChromaEmbeddingStore.builder()
-                    .baseUrl(chromaUrl)
-                    .collectionName(randomUUID())
-                    .build();
+    //         EmbeddingStore<TextSegment> embeddingStore = ChromaEmbeddingStore.builder()
+    //                 .baseUrl(chromaUrl)
+    //                 .collectionName(randomUUID())
+    //                 .build();
 
-            EmbeddingModel embeddingModel = new AllMiniLmL6V2EmbeddingModel();
+    //         EmbeddingModel embeddingModel = new AllMiniLmL6V2EmbeddingModel();
 
-            TextSegment segment1 = TextSegment.from("I like football.");
-            Embedding embedding1 = embeddingModel.embed(segment1).content();
-            embeddingStore.add(embedding1, segment1);
+    //         TextSegment segment1 = TextSegment.from("I like football.");
+    //         Embedding embedding1 = embeddingModel.embed(segment1).content();
+    //         embeddingStore.add(embedding1, segment1);
 
-            TextSegment segment2 = TextSegment.from("The weather is good today.");
-            Embedding embedding2 = embeddingModel.embed(segment2).content();
-            embeddingStore.add(embedding2, segment2);
+    //         TextSegment segment2 = TextSegment.from("The weather is good today.");
+    //         Embedding embedding2 = embeddingModel.embed(segment2).content();
+    //         embeddingStore.add(embedding2, segment2);
 
-            Embedding queryEmbedding = embeddingModel.embed("What is your favourite sport?").content();
-            List<EmbeddingMatch<TextSegment>> relevant = embeddingStore.findRelevant(queryEmbedding, 1);
-            EmbeddingMatch<TextSegment> embeddingMatch = relevant.get(0);
+    //         Embedding queryEmbedding = embeddingModel.embed("What is your favourite sport?").content();
+    //         List<EmbeddingMatch<TextSegment>> relevant = embeddingStore.findRelevant(queryEmbedding, 1);
+    //         EmbeddingMatch<TextSegment> embeddingMatch = relevant.get(0);
 
-            System.out.println(embeddingMatch.score()); // 0.8144288493114709
-            System.out.println(embeddingMatch.embedded().text()); // I like football.
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-        }
-    }
+    //         System.out.println(embeddingMatch.score()); // 0.8144288493114709
+    //         System.out.println(embeddingMatch.embedded().text()); // I like football.
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         System.out.println(e);
+    //     }
+    // }
 } 
