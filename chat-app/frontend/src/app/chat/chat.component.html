@@ -1,0 +1,15 @@
+<div class="chat-container">
+  <div class="flex-container">
+    <div class="panel">
+      <div class="input-container">
+        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)">
+        <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
+      </div>
+      <div class="response-box"> 
+        <div *ngFor="let message of messages">
+         <p><strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> {{message.content}}</p>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
