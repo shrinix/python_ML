@@ -88,14 +88,14 @@ public class ChatController {
 		System.out.println("Finished creating CustomerSupportAgent bean");
 
 		CustomerSupportAgent assistant = AiServices.builder(CustomerSupportAgent.class)
-		.chatLanguageModel(OpenAiChatModel.builder()
+		        .chatLanguageModel(OpenAiChatModel.builder()
 				.apiKey(System.getenv("API_KEY")) // use environment variable for apiKey
 				.timeout(ofSeconds(60))
 				.temperature(0.0)
 				.build())
-			.tools(employeeToolsRest)
-			.chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-			.build();
+				.tools(employeeToolsRest)
+				.chatMemory(MessageWindowChatMemory.withMaxMessages(10))
+				.build();
 		System.out.println("Finished creating chat language model");
 		return assistant;
 	}

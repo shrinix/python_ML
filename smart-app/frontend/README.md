@@ -1,27 +1,53 @@
-# AngularFrontend
+# Tightly-integrated chat assistant (v1.0 Tag)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.1.3.
+Front-end project: 
+* Tech stack: Angular v12.1.3
+* To build the frontend, from the smart-app/frontend folder, run >ng build. The build artifacts will be stored in the `dist/` directory.
+* To run the frontend, from the smart-app/frontend folder, run >ng serve. 
+* The frontend app can be accessed using the URL `http://localhost:4200/`. The app automatically reloads if the source files change.
 
-## Development server
+Back-end project: 
+* Tech stack: Java, Spring Boot
+* To build the backend, from the smart-app/backend folder, run >mvn clean install
+* To run the backend, from the smart-app/backend/target folder, run >java -jar ai-demo-0.0.1-SNAPSHOT.jar
+* The backend app runs on http://localhost:8080
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-## Code scaffolding
+# REST-integrated chat assistant (v3.0 Tag)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Target App Front-end project: 
+* Tech stack: Angular v12.1.3
+* To build the frontend, from the smart-app/frontend folder, 
+** run >npm install
+** run >ng build. The build artifacts will be stored in the `dist/` directory.
+* To run the frontend, from the smart-app/frontend folder, run >ng serve. 
+* The frontend app can be accessed using the URL `http://localhost:4200/`. The app automatically reloads if the source files change.
 
-## Build
+Target App Back-end project: 
+* Tech stack: Java, Spring Boot
+* To build the backend, from the smart-app/backend folder, run >mvn clean install
+* To run the backend, from the smart-app/backend/target folder, run >java -jar ai-demo-0.0.1-SNAPSHOT.jar
+* The backend app runs on http://localhost:8080
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Chat App Front-end project: 
+* Tech stack: Angular v12.1.3
 
-## Running unit tests
+* To install dependencies, cat requirements.txt | xargs npm install -g
+* To build the frontend, from the smart-app/frontend folder, run >ng build. The build artifacts will be stored in the `dist/` directory.
+* To run the frontend, from the smart-app/frontend folder, run >ng serve. 
+* The frontend app can be accessed using the URL `http://localhost:4201/`. The app automatically reloads if the source files change.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+* requirments.txt
+** @angular/core
+** @angular/platform-browser-dynamic
+** @angular/common/http
+** rxjs
 
-## Running end-to-end tests
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Chat App Back-end project: 
+* Tech stack: Java, Spring Boot
+* To build the backend, from the smart-app/backend folder, run >mvn clean install
+* To run the backend, from the smart-app/backend/target folder, run >java -jar ai-demo-0.0.1-SNAPSHOT.jar
+* The backend app runs on http://localhost:8081
 
-## Further help
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.

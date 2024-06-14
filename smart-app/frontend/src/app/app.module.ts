@@ -8,7 +8,6 @@ import { CreateEmployeeComponent } from './create-employee/create-employee.compo
 import { FormsModule} from '@angular/forms';
 import { UpdateEmployeeComponent } from './update-employee/update-employee.component';
 import { EmployeeDetailsComponent } from './employee-details/employee-details.component'
-import { ChatComponent } from './chat/chat.component';
 
 @NgModule({
   declarations: [
@@ -16,8 +15,7 @@ import { ChatComponent } from './chat/chat.component';
     EmployeeListComponent,
     CreateEmployeeComponent,
     UpdateEmployeeComponent,
-    EmployeeDetailsComponent,
-    ChatComponent
+    EmployeeDetailsComponent
   ],
   imports: [
     BrowserModule,
