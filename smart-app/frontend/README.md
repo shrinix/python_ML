@@ -37,7 +37,9 @@ Chat App Front-end project:
 * To run the frontend, from the smart-app/frontend folder, run >ng serve. 
 * The frontend app can be accessed using the URL `http://localhost:4201/`. The app automatically reloads if the source files change.
 
-* requirments.txt
+ npm install @angular-devkit/build-angular
+
+* Angular requirements.txt
 ** @angular/core
 ** @angular/platform-browser-dynamic
 ** @angular/common/http
