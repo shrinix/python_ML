@@ -335,6 +335,104 @@ def predict(file_and_path):
 	print(pet_category_pred)
 	print(breed_category_pred)
 
+def explain_model_using_shap(shap, model, X_train, X_test):
+
+	# Ensure X_train and X_test are not empty and have the expected structure
+	if X_train.empty or X_test.empty:
+		raise ValueError("X_train or X_test is empty. Please provide valid datasets.")
+    
+	# Step 1: Select a background dataset (can be a subset of the training data)
+	# Here, we are selecting a random sample of 100 rows from the training data
+	# Ensure that the random sample is not replaced
+	# Ensure that the random sample has ids that are present in the training data
+	#X_train is using column labels instead of indices. Create a new dataframe from X_train that uses indexes
+	# derived from column labels of X_train
+	X_train = X_train.reset_index(drop=True)
+	print(X_train.columns)
+	
+	# #Convert the columns with names starting with height_label and length_label to integers
+	X_train = X_train.astype({'height_label_0-25Q': 'int32', 'height_label_25-50Q': 'int32', 'height_label_50-75Q': 'int32', 'height_label_75-100Q': 'int32'})	
+	X_train = X_train.astype({'length_label_0-25Q': 'int32', 'length_label_25-50Q': 'int32', 'length_label_50-75Q': 'int32', 'length_label_75-100Q': 'int32'})	
+
+	#Convert the columns with names starting with color_type to integers
+	X_train = X_train.astype({col: 'int32' for col in X_train.columns if 'color_type' in col})
+ 	# Ensure X_train has enough rows to sample from
+	if X_train.shape[0] < 100:
+		raise ValueError("X_train does not have enough data to select a background dataset.")
+
+	background = X_train.sample(n=100, replace=False)
+	#background = X_train[np.random.choice(X_train.shape[0], 10, replace=False)]
+	#print(background.head())
+	#print(background.shape)
+	simple_model_first_output = tf.keras.Model(
+		inputs=model.inputs,
+		outputs=model.outputs[0],  # specifying a single output for shap usage
+	)
+	simple_model_second_output = tf.keras.Model(
+		inputs=model.inputs,
+		outputs=model.outputs[1],  # specifying a single output for shap usage
+	)
+	# Step 2: Create a DeepExplainer
+	explainer_1 = shap.DeepExplainer(simple_model_first_output, background)
+	explainer_2 = shap.DeepExplainer(simple_model_second_output, background)
+	
+	# Step 3: Choose instances you want to explain, for example, the first 10 instances of your test set
+
+	#data in columns with names starting with height_label and length_label contain boolean values. Convert them to integers
+	# X_test = X_test.astype({'height_label_0-25Q': 'int32', 'height_label_25-50Q': 'int32', 'height_label_50-75Q': 'int32', 'height_label_75-100Q': 'int32'})
+	# X_test = X_test.astype({'length_label_0-25Q': 'int32', 'length_label_25-50Q': 'int32', 'length_label_50-75Q': 'int32', 'length_label_75-100Q': 'int32'})
+
+	# X_test_1 = X_test.sample(n=10, replace=False)
+	# X_test_2 = X_test.sample(n=10, replace=False)
+
+	# print(X_test.columns)
+
+	# Step 4: Compute SHAP values
+	shap_values_1 = explainer_1.shap_values(background.iloc[0:50, :].values).argmax(axis=-1)
+	shap_values_2 = explainer_2.shap_values(background.iloc[0:50, :].values).argmax(axis=-1)
+	#print(shap_values_1)
+	# Step 5: Visualize the first prediction's explanation (for multi-output models, select the output)
+	plt.figure()
+	shap.summary_plot(shap_values_1, background.iloc[0:50, :], plot_type = 'bar', show=False, max_display=X_train.shape[1])
+	plt.savefig('shap_summary_plot1.png')
+	plt.clf()  # Clear the current figure
+	shap.summary_plot(shap_values_2, background.iloc[0:50, :], show=False, plot_type='bar', max_display=X_train.shape[1])
+	plt.savefig('shap_summary_plot2.png')
+	plt.clf()  # Clear the current figure
+	#create a shap plot to show dependence of the output on the input features
+	feature = 'height(cm)'
+	shap.dependence_plot(feature, shap_values_1, background.iloc[0:50, :], show=False)
+	plt.savefig(f'shap_dependence_plot_{feature}_1.png')
+	plt.clf()  # Clear the current figure
+	shap.dependence_plot(feature, shap_values_2, background.iloc[0:50, :], show=False)
+	plt.savefig(f'shap_dependence_plot_{feature}_2.png')
+	plt.clf()  # Clear the current figure
+	# #create a shap waterfall plot to show the impact of each feature on the output
+	# shap.waterfall_plot(shap.Explanation(values=shap_values_1, base_values=explainer_1.expected_value[0], data=background.iloc[0, :]), show=False)
+	# plt.savefig('shap_waterfall_plot1.png')
+	# plt.clf()  # Clear the current figure
+
+	# #create a shap force plot to show the impact of each feature on the output
+	# shap.force_plot(explainer_1.expected_value[0], shap_values_1[0], background.iloc[0, :], show=False, matplotlib=True)
+	# plt.savefig('shap_force_plot1.png')
+	# plt.clf()  # Clear the current figure
+	# shap.force_plot(explainer_1.expected_value[1], shap_values_2[0], background.iloc[0, :], show=False, matplotlib=True)
+	# plt.savefig('shap_force_plot2.png')
+	# plt.clf()  # Clear the current figure
+
+	# # Method 2: Textual summary (for example, mean absolute SHAP values for the first output)
+	# if isinstance(shap_values, list):
+    #     # Handle multi-output models
+	# 	shap_values_output = shap_values[0]  # Assuming we're interested in the first output
+	# else:
+	# 	shap_values_output = shap_values
+
+	# mean_abs_shap_values = np.abs(shap_values_output).mean(axis=0)
+	# feature_importance = pd.Series(mean_abs_shap_values, index=X_train.columns).sort_values(ascending=False)
+
+	# print("Top 5 features by mean absolute SHAP value:")
+	# print(feature_importance.head(5))
+
 def main():
 
 	#present the user with a menu to choose the operation - whether to train the model or to predict
@@ -342,7 +440,8 @@ def main():
 	print("Choose the operation to perform:")
 	print("1. Train the model")
 	print("2. Predict the output for the test data")
-	print("3. Exit")
+	print("3. Explain model using SHAP")
+	print("4. Exit")
 	operation = input("Enter the operation number: ")
 
 	#loop through the menu until the user chooses to exit
@@ -357,6 +456,30 @@ def main():
 		file_and_path = './pet_data_test.csv'
 		predict(file_and_path)
 	elif operation == '3':
+		#load the model
+		model = tf.keras.models.load_model('./multi_output_pet_classification.keras')
+		shap = __import__('shap')
+		#load the training data
+		X_train,Y,num_pet_category_cols, num_breed_category_cols = get_dataset('./pet_data_train.csv', False)
+		#Join the training data and labels
+		#Convert the labels to a dataframe. The dataframe will have two sets of columns. Create multiple columns for each label shape of Y[0] and Y[1]
+		#The columns will be named pet_category_0, pet_category_1, pet_category_2, breed_category_0, breed_category_1, breed_category_2
+		#The columns will be populated with the values of Y[0] and Y[1]
+		#The columns will be added to the X_train dataframe
+		# Use num_pet_category_cols and num_breed_category_cols to get the number of columns to create
+
+		# for i in range(num_pet_category_cols):
+		# 	X_train['pet_category_'+str(i)] = Y[0][:X_train.shape[0],i]
+
+		# for i in range(num_breed_category_cols):
+		# 	X_train['breed_category_'+str(i)] = Y[1][:,i]
+		
+		print(X_train.columns)
+		#X = pd.read_csv('./pet_data_train.csv')
+		# X_train, X_test = train_test_split(X, test_size=0.2, random_state=42)
+		X_test = get_dataset('./pet_data_test.csv', True)
+		explain_model_using_shap(shap, model, X_train, X_test)
+	elif operation == '4':
 		exit()
 
 if __name__ == "__main__":
