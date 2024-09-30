@@ -35,7 +35,8 @@ export class ChatComponent {
     'Provide the key financial metrics used by the analyst to rate {company} and for each of these metrics provide the values',
     'Provide the details of the analyst who wrote the report for {company}, their affiliation, and the date of the report.',
   ];
-  companies: string[] = ['3P Learning', 'ABB', 'Apple Inc'];
+  companies: string[] = ['3P Learning', 'ABB', 'Apple Inc', 'CBS Corporation', 'Duke Energy', 'Imperial Oil Limited',
+    'Premier Foods', 'Sanofi', 'Schneider Electric', 'The Walt Disney Company', 'Virgin Money Holdings'];
   selectedCompany: string;
   updatedCommands: string[] = [];
 
