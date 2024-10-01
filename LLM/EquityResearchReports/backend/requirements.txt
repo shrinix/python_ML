@@ -3,3 +3,4 @@ pypdf
 flask
 flask_session
 flask_cors
+dotenv
