@@ -1,0 +1,33 @@
+<div class="chat-container">
+  <div class="flex-container">
+    <div class="commands-panel">
+      <h3>Ready-to-use Commands</h3>
+      <ul>
+        <li *ngFor="let command of updatedCommands" (click)="sendCommand(command)">
+          {{ command }}
+        </li>
+      </ul>
+    </div>
+    <div class="panel">
+      <div class="input-container">
+        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)">
+        <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
+      </div>
+      <div class="patient-names-panel">
+        <span class="patient-name" *ngFor="let patient of patients; let i = index">
+          <input type="radio" name="selectedPatient" [value]="patient" [(ngModel)]="selectedPatient" (change)="selectPatient(patient)">
+          {{ patient }}
+        </span>
+      </div>
+      <div class="response-box">
+        <div *ngFor="let message of messages">
+          <p *ngIf="!message.isHtml" [ngClass]="message.cssClass">
+            <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> {{message.content}}
+          </p>
+          <p *ngIf="message.isHtml" [ngClass]="message.cssClass">
+            <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> <span [innerHTML]="message.content"></span>
+          </p>
+      </div>
+    </div>
+  </div>
+</div>

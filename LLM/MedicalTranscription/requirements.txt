@@ -1,5 +1,0 @@
-langchain-community
-langchain-experimental
-llama-index-graph-stores-neo4j
-llama-index-core
-llama-index
