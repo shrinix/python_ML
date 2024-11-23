@@ -1,35 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page 1</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 10px 0;
-            text-align: center;
-        }
-        main {
-            padding: 20px;
-        }
-        footer {
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            padding: 10px 0;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
-        }
-    </style>
+</style>
 </head>
 <body>
     <header>
@@ -38,12 +7,33 @@
             <a href="../index.html" style="color: #fff">Home</a> |
         </nav>
     </header>
-    <main>
-        <h2>Welcome to Page 1</h2>
-        <p>This is the content of Page 1.</p>
+    <main style="display: flex;">
+        <div class="content" style="flex: 1; padding: 20px; background-color: #fff; margin-right: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <h2>Contents</h2>
+            <ul>
+                <li><a href="#section1">Section 1</a></li>
+                <li><a href="#section2">Section 2</a></li>
+                <li><a href="#section3">Section 3</a></li>
+            </ul>
+        </div>
+        <div class="articles" style="flex: 2; padding: 20px; background-color: #fff; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <h2>Articles</h2>
+            <article id="section1">
+                <h3>Section 1</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque leo nec libero fermentum, a tincidunt nulla facilisis.</p>
+            </article>
+            <article id="section2">
+                <h3>Section 2</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque leo nec libero fermentum, a tincidunt nulla facilisis.</p>
+            </article>
+            <article id="section3">
+                <h3>Section 3</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque leo nec libero fermentum, a tincidunt nulla facilisis.</p>
+            </article>
+        </div>
     </main>
     <footer>
-        <p>&copy; 2023 My Blog. All rights reserved.</p>
+        <p>&copy; 2024 All rights reserved.</p>
     </footer>
 </body>
 </html>
