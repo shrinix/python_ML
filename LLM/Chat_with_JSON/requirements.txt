@@ -1,0 +1,11 @@
+langchain-core==0.3.28 #For core functionalities of LangChain.
+langchain-openai==0.2.14 #For OpenAI-related functionalities in LangChain. Used with openai==1.58.1
+langchain-community==0.3.13 #For community-contributed functionalities in LangChain.
+langchain-huggingface==0.1.2 #For HuggingFace-related functionalities in LangChain.
+langchain-ollama==0.2.2 #For Ollama-related functionalities in LangChain. Used with ollama==0.4.5
+huggingface-hub==0.27.0 #For interacting with the HuggingFace Hub.
+torch==2.5.1 # For PyTorch, which is used for model training and inference.
+datasets==3.2.0 #For loading and processing datasets.
+transformers==4.47.1 #For HuggingFace Transformers, which provides models and tokenizers
+peft==0.14.0 #For Parameter-Efficient Fine-Tuning (PEFT) of models.
+trl==0.13.0 #For Training and Reinforcement Learning (TRL) with Transformers.
