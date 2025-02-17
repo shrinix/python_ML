@@ -1,5 +1,7 @@
 To run frontend,
 >cd frontend
+
+Build and run Angular frontend
 >ng serve
 
 To run backend,
