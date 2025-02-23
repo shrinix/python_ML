@@ -1,0 +1,20 @@
+<mat-tab-group #tabGroup>
+  <mat-tab [label]="isPortfolioAnalysisDataLoaded ? 'Portfolio Info' : 'Portfolio Info (Loading...)'">
+    <div id="portfolioInfo" style="width: 100%; height: 400px;"></div>
+  </mat-tab>
+  <mat-tab [label]="isMergedStockDataLoaded ? 'Ticker Plots' : 'Ticker Plots (Loading...)'">
+    <div class="vertical-panels">
+      <div class="horizontal-panels1">
+        <div class="panel" id="tickerTimeSeriesPlotLeft" style="width: 50%; height: 100%;"></div>
+        <div class="panel" id="tickerDailyReturnsPlotLeft" style="width: 50%; height: 100%;"></div>
+      </div>
+      <div class="horizontal-panels2">
+        <div class="panel" id="tickerTimeSeriesPlotRight" style="width: 50%; height: 100%;"></div>
+        <div class="panel" id="tickerDailyReturnsPlotRight" style="width: 50%; height: 100%;"></div>
+      </div>
+    </div>
+  </mat-tab>
+  <mat-tab [label]="isPortfolioAnalysisDataLoaded ? 'Portfolio Analysis Plots' : 'Portfolio Analysis Plots (Loading...)'">
+    <div id="portfolioAnalysisPlot" style="width: 100%; height: 100%;"></div>
+  </mat-tab>
+</mat-tab-group>
