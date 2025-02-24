@@ -94,15 +94,11 @@ export class PortfolioAnalyzerUiComponent implements OnInit , AfterViewInit {
 
     renderPlots(tabIndex: number): void {
       if (tabIndex === 0) {
-        if (!this.portfolioData || !this.portfolioResultsData || !this.portfolioWeightsDeltaData) {
-          return
+        if (!this.isPortfolioAnalysisDataLoaded) {
+          console.warn('Portfolio analysis data is not loaded yet.');
+          return;
         }
-        const data3 = this.portfolioData.filter((d: any) => d.tab === 3);
-        const layout3 = {
-          title: 'Portfolio Information'
-        };
-
-        Plotly.newPlot('portfolioInfo', data3, layout3);
+        this.showPortfolioInfo(this.portfolioResultsData, this.portfolioWeightsDeltaData);
       } 
       else if (tabIndex === 1) {
         if (!this.isMergedStockDataLoaded) {
@@ -124,6 +120,110 @@ export class PortfolioAnalyzerUiComponent implements OnInit , AfterViewInit {
     tabChanged(event: any): void {
       this.renderPlots(event.index);
     }
+
+    showPortfolioInfo(portfolioResultsData: any, portfolioWeightsDeltaData: any): void {
+
+      const columnsOrder1 = ['Ticker', 'Initial Weight', 'Final Weight'];
+      const tableName1 = 'Portfolio Weights Delta';
+      const tableDomElementName1 = 'portfolioInfoTable1';
+      this.renderTable(tableDomElementName1, tableName1, this.portfolioWeightsDeltaData, columnsOrder1);
+      // Access the rendered table element to modify cell values and styles
+      const tableElement = document.getElementById(tableDomElementName1);
+      if (tableElement) {
+        const rows = tableElement.getElementsByTagName('tr');
+        for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+            const cells = rows[i].getElementsByTagName('td');
+            for (let j = 0; j < cells.length; j++) {
+              if (columnsOrder1[j] === 'Initial Weight' || columnsOrder1[j] === 'Final Weight') {
+                cells[j].textContent = `${parseFloat(cells[j].textContent || '0').toFixed(2)}%`;
+                cells[j].style.textAlign = 'right'; // Right justify the values
+              }
+            }
+        }
+      }
+
+      const currency = '$'
+      const columnsOrder2 = ['From Date', 'Total Value', 'Adjusted Total Value'];
+      const tableName2 = 'Portfolio Results';
+      const tableDomElementName2 = 'portfolioInfoTable2';
+      this.renderTable(tableDomElementName2, tableName2, this.portfolioResultsData, columnsOrder2);
+      // Access the rendered table element to modify cell values and styles
+      const tableElement2 = document.getElementById(tableDomElementName2);
+      if (tableElement2) {
+        const rows = tableElement2.getElementsByTagName('tr');
+        for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+            const cells = rows[i].getElementsByTagName('td');
+            for (let j = 0; j < cells.length; j++) {
+              //convert date values to ISO format and strip timestamp
+              if (columnsOrder2[j] === 'From Date') {
+                console.log('date:', cells[j].textContent);
+                const date = new Date(cells[j].textContent || '');
+                cells[j].textContent = date.toISOString().split('T')[0].replace(/-(\d{2})-/, (match, p1) => `-${new Date(date).toLocaleString('default', { month: 'short' })}-`);
+              }
+              if (columnsOrder2[j] === 'Total Value' || columnsOrder2[j] === 'Adjusted Total Value') {
+                cells[j].textContent = `${currency}${(parseFloat(cells[j].textContent || '0')).toFixed(2)}`;
+                cells[j].style.textAlign = 'right'; // Right justify the values
+              }
+            }
+        }
+      }
+
+    }
+
+    renderTable(tableElementId: string, tableName: string, tableData: any, columnsOrder: string[]): void {
+       //Create a table to display the portfolio weights delta
+      //The table should be built dynamically based on the columns in the data
+      //The first row should be the column names
+      const table1 = document.createElement('table');
+      table1.classList.add('portfolio-info-table');
+      const header1 = table1.createTHead();
+      const headerRow1 = header1.insertRow(0);
+      
+      //Create the header row
+      columnsOrder.forEach((key: any) => {
+        const headerCell = headerRow1.insertCell();
+        headerCell.textContent = key;
+      });
+      //Create a table body
+      const body1 = table1.createTBody();
+      tableData.forEach((row: any) => {
+        const bodyRow = body1.insertRow();
+        columnsOrder.forEach((key: any) => {
+            const cell = bodyRow.insertCell();
+              cell.textContent = row[key];
+            }
+        );
+      }
+      );
+
+      // Style the table headers
+      headerRow1.style.fontWeight = 'bold';
+      headerRow1.style.border = '1px solid black'; // Add border to header row
+      headerRow1.childNodes.forEach((cell: any) => {
+        cell.style.border = '1px solid black'; // Add border to header cells
+        cell.style.padding = '5px'; // Add padding to create a gap between the cell text and borders
+      });
+      // Style the table cells
+      body1.childNodes.forEach((row: any) => {
+        row.style.border = '1px solid black'; // Add border to table rows
+        row.childNodes.forEach((cell: any, index: number) => {
+          cell.style.border = '1px solid black'; // Add border to table cells
+          cell.style.padding = '5px'; // Add padding to create a gap between the cell text and borders
+        });
+      });
+      //Append the table to the DOM
+      const tableTitle = document.createElement('h3');
+      tableTitle.textContent = tableName;
+      const portfolioWeightsDeltaDiv = document.getElementById(tableElementId);
+      if (portfolioWeightsDeltaDiv) {
+        portfolioWeightsDeltaDiv.innerHTML = '';
+        portfolioWeightsDeltaDiv.appendChild(tableTitle);
+        portfolioWeightsDeltaDiv.appendChild(table1);
+      } else {
+        console.error(tableElementId, 'is null');
+      }
+    }
+
 
     renderTimeSeriesPlot(mergedStockData: any): void {
       const uniqueTickers: string[] = [...new Set(this.mergedStockData.map((d: any) => d['Ticker'] as string))] as string[];
@@ -304,7 +404,7 @@ export class PortfolioAnalyzerUiComponent implements OnInit , AfterViewInit {
 
         const portfolioValueTrace: Partial<Plotly.ScatterData> = {
           x: portfolioResultsData.map((d: any) => new Date(d['From Date']).toISOString().split('T')[0]),
-          y: portfolioResultsData.map((d: any) => parseFloat(d['Value'])),
+          y: portfolioResultsData.map((d: any) => parseFloat(d['Total Value'])),
           type: 'scatter' as Plotly.PlotType,
           name: 'Portfolio Value',
           yaxis: 'y2',
@@ -314,16 +414,41 @@ export class PortfolioAnalyzerUiComponent implements OnInit , AfterViewInit {
           }
         };
 
-        // // Update traces to have dashed lines for ticker weights
-        // data1.forEach(trace => {
-        //   if (trace.name !== 'Portfolio Value') {
-        //     trace.line = {
-        //       dash: 'dash'
-        //     };
-        //   }
-        // });
-
         data1.push(portfolioValueTrace);
+
+        const adjPortfolioValueTrace: Partial<Plotly.ScatterData> = {
+          x: portfolioResultsData.map((d: any) => new Date(d['From Date']).toISOString().split('T')[0]),
+          y: portfolioResultsData.map((d: any) => parseFloat(d['Adjusted Total Value'])),
+          type: 'scatter' as Plotly.PlotType,
+          name: 'Adjusted Portfolio Value',
+          yaxis: 'y2',
+          line: {
+            color: 'red',
+            width: 5
+          }
+        };
+
+        data1.push(adjPortfolioValueTrace);
+
+        // Update traces to have dashed lines for ticker weights
+        data1.forEach(trace => {
+          if (trace.name == 'Portfolio Value') {
+            trace.line = {
+              dash: 'solid'
+            };
+          }
+          else if (trace.name == 'Adjusted Portfolio Value') {
+            trace.line = {
+              dash: 'solid'
+            };
+          }
+          else {
+            trace.line = {
+              dash: 'dash'
+            };
+          }
+        });
+
 
         // Extract unique dates for x-axis ticks
         const uniqueDates = [...new Set(this.portfolioWeightsData.map((d: any) => new Date(d['From Date']).toISOString().split('T')[0]))];
@@ -368,6 +493,7 @@ export class PortfolioAnalyzerUiComponent implements OnInit , AfterViewInit {
           yaxis2: {
             autorange: true,
             type: 'linear' as Plotly.AxisType,
+            showline: true,
             overlaying: 'y',
             side: 'right',
             title: {

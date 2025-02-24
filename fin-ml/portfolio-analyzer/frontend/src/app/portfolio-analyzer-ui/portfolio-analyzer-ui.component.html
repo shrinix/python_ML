@@ -1,6 +1,11 @@
 <mat-tab-group #tabGroup>
   <mat-tab [label]="isPortfolioAnalysisDataLoaded ? 'Portfolio Info' : 'Portfolio Info (Loading...)'">
-    <div id="portfolioInfo" style="width: 100%; height: 400px;"></div>
+    <div class="horizontal-panels">
+      <div class="panel" id="portfolioInfoTable1" style="width: 50%; height: 400px;">
+      </div>
+      <div class="panel" id="portfolioInfoTable2" style="width: 50%; height: 400px;">
+      </div>
+    </div>
   </mat-tab>
   <mat-tab [label]="isMergedStockDataLoaded ? 'Ticker Plots' : 'Ticker Plots (Loading...)'">
     <div class="vertical-panels">
