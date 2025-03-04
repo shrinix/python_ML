@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    image: shrinix/al_ml:equityresearch-backend-latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - /Users/shriniwasiyengar/git/python_ML/LLM/EquityResearchReports/pdf-data/:/app/pdfs/ 
+    env_file:
+      - ./backend/backend.env
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  frontend:
+    image: shrinix/al_ml:equityresearch-frontend-latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend

@@ -1,7 +1,11 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import os
+# __import__('pysqlite3')
 import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
+import os
+import argparse
 from dotenv import load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import CharacterTextSplitter
@@ -14,17 +18,51 @@ from langchain_openai import OpenAIEmbeddings
 import tiktoken
 import hashlib
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+#check if OPEN_AI_API_KEY is set
+if 'OPENAI_API_KEY' not in os.environ:
+    print("Please set the OPENAI_API_KEY environment variable")
+    sys.exit(1)
 
-load_dotenv('.env')
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Start the Flask application with a specific .env file.')
+parser.add_argument('--env-file', type=str, required=True, help='Path to the .env file')
+args = parser.parse_args()
+
+if args.env_file:
+    # Load environment variables from the specified .env file
+    load_dotenv(args.env_file)
+else:
+    # Load environment variables from .env file
+    load_dotenv('backend.env')
+
+app = Flask(__name__)
+# Get CORS origins from environment variables
+cors_origins = os.getenv('CORS_ORIGINS', '*')
+
+# # Enable CORS for specific IP address
+CORS(app,supports_credentials=True, resources={r"/*": {"origins": cors_origins}})
+
+# Use environment variables
+app.config['ENV'] = os.getenv('FLASK_ENV', 'production')
+PDF_DIRECTORY = os.getenv('PDF_DIRECTORY', '/app/pdfs/')
+OPEN_API_KEY = os.getenv('OPENAI_API_KEY')
+
 home_dir = os.path.expanduser("~")
-data_dir = "../pdf-data/"
+data_dir = PDF_DIRECTORY #"../pdf-data/"
 
 # Global variables to store vectordb and chain
 vectordb = None
 chain = None
 chat_history = []
+
+@app.after_request
+def after_request(response):
+    # response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Allow-Private-Network', 'true')
+    return response
 
 # Function to generate a hash for a document
 #TODO: Fix error in this function
@@ -38,8 +76,51 @@ def document_exists_in_vectordb(vectordb, document_hash):
     results = vectordb.search_by_metadata({'hash': document_hash})
     return len(results) > 0
 
-def load_data(data_dir):
+#Endpoint and function to upload a pdf into data_dir
+@app.route('/upload_file', methods=['POST'])
+def upload_pdf():
+    #check if the post request has the file part
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    pdf_file = request.files['file']
+    #if user does not select file, browser also
+    #submit an empty part without filename
+    if pdf_file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    #save the pdf file to the data directory
+    pdf_file.save(data_dir + pdf_file.filename)
 
+    #load the pdf file into the vectordb
+    documents = []
+    pdf_path = data_dir + pdf_file.filename
+    loader = PyPDFLoader(pdf_path)
+    documents.extend(loader.load())
+    vectordb = split_and_embed_documents(documents)
+    vectordb.persist()
+    initialize_chain()
+
+    return jsonify({"message": "PDF uploaded and processed successfully."})
+
+def split_and_embed_documents(documents):
+    
+     # Split the documents into smaller chunks
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
+    documents = text_splitter.split_documents(documents)
+
+    # Convert the document chunks to embedding and save them to the vector store
+    vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data")
+    # Process and add documents to the vector database if they don't already exist
+    # for document in documents:
+    #     document_hash = generate_document_hash(document)
+    #     if not document_exists_in_vectordb(vectordb, document_hash):
+    #         vectordb.add_documents([document], metadata={'hash': document_hash})
+    vectordb.persist()
+    return vectordb
+
+def load_data(data_dir):
+    print("Loading data from: ", data_dir)
     #delete data directory if it exists
     if os.path.exists("./data"):
         os.system("rm -rf ./data")
@@ -61,18 +142,7 @@ def load_data(data_dir):
         #     loader = TextLoader(text_path)
         #     documents.extend(loader.load())
 
-    # Split the documents into smaller chunks
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
-    documents = text_splitter.split_documents(documents)
-
-    # Convert the document chunks to embedding and save them to the vector store
-    vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data")
-    # Process and add documents to the vector database if they don't already exist
-    # for document in documents:
-    #     document_hash = generate_document_hash(document)
-    #     if not document_exists_in_vectordb(vectordb, document_hash):
-    #         vectordb.add_documents([document], metadata={'hash': document_hash})
-    vectordb.persist()
+    vectordb = split_and_embed_documents(documents)
     return vectordb
 
 def count_tokens(text):
@@ -143,4 +213,6 @@ if __name__ == '__main__':
     # load_data(data_dir)
     #chat("What is the analyst rating for the company Duke Energy?")
     #chat("Create a list of all companies alongwith their respective analyst rating and the name of the analyst providing the rating")
-    app.run(debug=True)
+    
+    # app.run(host='0.0.0.0', port=5000, debug=True) #use this only for remote server
+    app.run(port=5001, debug=True, host='0.0.0.0')

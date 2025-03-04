@@ -3,4 +3,9 @@ pypdf
 flask
 flask_session
 flask_cors
-dotenv
+python-dotenv
+langchain_community
+langchain_openai
+chromadb
+numpy==1.26.4
+# pysqlite3-binary #required on linux systems for chromadb

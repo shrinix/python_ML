@@ -14,6 +14,7 @@ import os
 import os.path
 from langchain_community.chat_models import ChatOllama
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from LLM.EquityResearchReports.backend.evaluate_RAG import RAGEvaluator
 
 import sys
 sys.path.insert(0, '/Users/shriniwasiyengar/git/python_ML/LLM/Chat_with_PDFs/EquityResearchReports/utils')
@@ -105,8 +106,8 @@ prompt = PromptTemplate(
                 input_variables=["context", "chat_history"])
 
 chain = load_summarize_chain(llm, chain_type="stuff")
-              search = vectordb.similarity_search(" ")
-              summary = chain.run(input_documents=search, question="Write a summary within 200 words.")
+search = vectordb.similarity_search(" ")
+summary = chain.run(input_documents=search, question="Write a summary within 200 words.")
 
 # qa_chain_1 = ConversationalRetrievalChain.from_llm(llm=llm,
 #                                    memory=memory1,
@@ -131,3 +132,11 @@ result_1['answer'] = result_1['answer'].strip()
 summary_of_answers += f"{COMPANY_NAMES[0]} answer: " + result_1['answer']+ f";\n"
 
 print(summary_of_answers)
+
+if __name__ == "__main__":
+    evaluator = RAGEvaluator()
+    question = "What is the value of GDP per capita of Finland provided in the data?"
+    response = "The GDP per capita of Finland is $50,000."
+    reference = "The GDP per capita of Finland is $50,000."
+    results = evaluator.evaluate_all(question, response, reference)
+    print(results)
