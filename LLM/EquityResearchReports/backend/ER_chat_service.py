@@ -25,13 +25,15 @@ if 'OPENAI_API_KEY' not in os.environ:
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Start the Flask application with a specific .env file.')
-parser.add_argument('--env-file', type=str, required=True, help='Path to the .env file')
+parser.add_argument('--env-file', type=str, required=False, help='Path to the .env file')
 args = parser.parse_args()
 
 if args.env_file:
+    print(f"Loading environment variables from {args.env_file}")
     # Load environment variables from the specified .env file
     load_dotenv(args.env_file)
 else:
+    print("No .env file specified. Loading environment variables from backend.env")
     # Load environment variables from .env file
     load_dotenv('backend.env')
 

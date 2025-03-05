@@ -4,7 +4,7 @@
 
 export const environment = {
     production: false,
-    baseURL: 'http://127.0.0.1:5001' //Use full URL starting with http:// or https://
+    baseURL: '{{BASE_URL}}' //Use full URL starting with http:// or https://
   };
   
   /*

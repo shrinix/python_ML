@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy the .env file
-COPY backend.env backend.env
+COPY *.env ./
 
 # Copy the rest of the application code
 COPY . .

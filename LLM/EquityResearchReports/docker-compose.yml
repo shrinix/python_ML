@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: shrinix/al_ml:equityresearch-backend-latest
+    image: shrinix/ai_ml:equityresearch-backend-latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -16,10 +16,12 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
 
   frontend:
-    image: shrinix/al_ml:equityresearch-frontend-latest
+    image: shrinix/ai_ml:equityresearch-frontend-latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    environment:
+        BASE_URL: ${BASE_URL:-http://localhost}
     ports:
       - "4200:4200"
     depends_on:
