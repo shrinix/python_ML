@@ -1,6 +1,10 @@
 <div class="chat-container">
   <div class="flex-container">
     <div class="commands-panel">
+      <h3>Select Company</h3>
+      <select [(ngModel)]="selectedCompany" (change)="selectCompany(selectedCompany)">
+        <option *ngFor="let company of companies" [value]="company">{{ company }}</option>
+      </select>
       <h3>Ready-to-use Commands</h3>
       <ul>
         <li *ngFor="let command of updatedCommands" (click)="sendCommand(command)">
@@ -13,12 +17,6 @@
         <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)">
         <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
       </div>
-      <div class="company-names-panel">
-        <span class="company-name" *ngFor="let company of companies; let i = index">
-          <input type="radio" name="selectedCompany" [value]="company" [(ngModel)]="selectedCompany" (change)="selectCompany(company)">
-          {{ company }}
-        </span>
-      </div>
       <div class="response-box">
         <div *ngFor="let message of messages">
           <p *ngIf="!message.isHtml" [ngClass]="message.cssClass">
@@ -30,4 +28,13 @@
       </div>
     </div>
   </div>
+</div>
+<div class="upload-panel">
+  <h3>Upload PDF for new Company</h3>
+  <input type="text" [(ngModel)]="uploadedCompanyName" placeholder="Enter company name" (input)="clearUploadError()" style="width: 80%;">
+  <input type="file" accept="application/pdf" #fileInput>
+  <br>
+  <br>
+  <button (click)="uploadPdf()">Submit</button>
+  <div *ngIf="uploadError" class="error-message">{{ uploadError }}</div>
 </div>

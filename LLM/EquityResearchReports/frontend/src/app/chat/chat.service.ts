@@ -30,6 +30,10 @@ export class ChatService {
     providedIn: 'root'
   })
 
+  getCompaniesList(): Observable<any> {
+    return this.httpClient.get(`${this.baseURL}/companies`);
+  }
+  
   getAnswer(question: string): any {
     console.log ('question: '+question);
     const params = new HttpParams().set('userMessage', question);
@@ -43,5 +47,11 @@ export class ChatService {
 
   addMessage(message: ChatMessage) {
     this.messages.push(message);
+  }
+
+  uploadFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.httpClient.post(`${this.baseURL}/upload`, formData);
   }
 }

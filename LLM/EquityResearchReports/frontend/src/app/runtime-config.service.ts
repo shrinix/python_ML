@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError, of } from 'rxjs';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +16,11 @@ export class RuntimeConfigService {
     return this.http.get('/assets/runtime-config.json').pipe(
       map((config: any) => {
         this.config = config;
+      }),
+      catchError(() => {
+        console.log('Could not load runtime config, using environment variables');
+        this.config = { BASE_URL: environment.baseURL };
+        return of(void 0);
       })
     );
   }

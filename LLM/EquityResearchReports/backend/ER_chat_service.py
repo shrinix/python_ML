@@ -17,6 +17,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 import tiktoken
 import hashlib
+import time
 
 #check if OPEN_AI_API_KEY is set
 if 'OPENAI_API_KEY' not in os.environ:
@@ -56,6 +57,7 @@ data_dir = PDF_DIRECTORY #"../pdf-data/"
 vectordb = None
 chain = None
 chat_history = []
+files_dictionary = []
 
 @app.after_request
 def after_request(response):
@@ -86,11 +88,21 @@ def upload_pdf():
         return jsonify({"error": "No file part"}), 400
     
     pdf_file = request.files['file']
+
+    print("Uploading file: ", pdf_file.filename)
     #if user does not select file, browser also
     #submit an empty part without filename
     if pdf_file.filename == '':
         return jsonify({"error": "No selected file"}), 400
     
+    #check if the file exists in the data directory
+    if os.path.exists(data_dir + pdf_file.filename):
+        print("File exists in the data directory")
+        #rename the existing file with a timestamp and move it to the archive directory
+        #Use the format filename-<MM-DD-YYYY>-<HH-MM-SS>.pdf for the archived file
+        timestamp = time.strftime("%m-%d-%Y-%H-%M-%S")
+        os.system(f"mv {data_dir + pdf_file.filename} {data_dir + 'archive/' + pdf_file.filename}-{timestamp}.pdf")
+
     #save the pdf file to the data directory
     pdf_file.save(data_dir + pdf_file.filename)
 
@@ -123,15 +135,20 @@ def split_and_embed_documents(documents):
 
 def load_data(data_dir):
     print("Loading data from: ", data_dir)
-    #delete data directory if it exists
+    #delete data directory used by ChromaDB, if it exists
     if os.path.exists("./data"):
         os.system("rm -rf ./data")
 
     documents = []
     # Process a list of documents from data_dir folder
-    for file in os.listdir(data_dir):
+    # loop through the files_dictionary list and load the documents
+    for company_name, file, status in files_dictionary:
         if file.endswith(".pdf"):
             print("Processing_file: ",file)
+            #check if the file exists in the data directory
+            if not os.path.exists(data_dir + file):
+                print(f"File {file} does not exist in the data directory ... skipping")
+                continue
             pdf_path = data_dir + file
             loader = PyPDFLoader(pdf_path)
             documents.extend(loader.load())
@@ -143,6 +160,12 @@ def load_data(data_dir):
         #     text_path = data_dir + file
         #     loader = TextLoader(text_path)
         #     documents.extend(loader.load())
+            #replace the existing entry in files_dictionary with a new entry containing the company name and the status (whether file was processed or not)
+            status = "Processed"
+            for i, entry in enumerate(files_dictionary):
+                if entry[0] == company_name and entry[1] == file:
+                    entry[2]= status
+                    break
 
     vectordb = split_and_embed_documents(documents)
     return vectordb
@@ -161,14 +184,72 @@ def initialize_chain():
         verbose=False
     )
 
+def set_files_dictionary():
+    global files_dictionary
+    files_dictionary.append(["3P Learning", "3p-learning-2015-db.pdf","Not processed"])
+    files_dictionary.append(["ABB", "abb-2015-nomura-global-markets-research.pdf","Not processed"])
+    files_dictionary.append(["Apple Inc", "apple-inc-2010-goldman-sachs.pdf","Not processed"])
+    files_dictionary.append(["CBS Corporation", "cbs-corporation-2015-db.pdf","Not processed"])
+    files_dictionary.append(["Duke Energy", "duke-energy-2015-gs-credit-research.pdf","Not processed"])
+    files_dictionary.append(["Imperial Oil Limited", "imperial-oil-limited-2013-rbc-capital-markets.pdf","Not processed"])
+    files_dictionary.append(["Premier Foods", "premier-foods-2015-bc-credit-research.pdf","Not processed"])
+    files_dictionary.append(["Sanofi", "sanofi-2014-gs-credit-research.pdf","Not processed"])
+    files_dictionary.append(["Schneider Electric", "schneider-electric-2015-no.pdf","Not processed"])
+    files_dictionary.append(["The Walt Disney Company", "the-walt-disney-company-2015-db.pdf","Not processed"])
+    files_dictionary.append(["Virgin Money Holdings", "virgin-money-holdings-2015-gs.pdf","Not processed"])
+    return files_dictionary
+
 def internal_initialize():
     global vectordb
     with app.app_context():
+        set_files_dictionary()
         vectordb = load_data(data_dir)
         initialize_chain()
 
 # Call internal_initialize when the application starts
 internal_initialize()
+
+#Endpoint to upload a pdf file
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    #check if the post request has the file part
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    pdf_file = request.files['file']
+    #if user does not select file, browser also
+    #submit an empty part without filename
+    if pdf_file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    #check if the file exists in the data directory
+    if os.path.exists(data_dir + pdf_file.filename):
+        #rename the existing file with a name <filename>-<YYYY-MM-DD_HH-MM-SS>.pdf and move it to the archive directory
+        timestamp_str = time.strftime("%Y-%m-%d_%H-%M-%S")
+        os.system(f"mv {data_dir + pdf_file.filename} {data_dir + 'archive/' + pdf_file.filename + '-' + timestamp_str}") 
+        
+    #save the pdf file to the data directory
+    pdf_file.save(data_dir + pdf_file.filename)
+
+    #load the pdf file into the vectordb
+    documents = []
+    pdf_path = data_dir + pdf_file.filename
+    loader = PyPDFLoader(pdf_path)
+    documents.extend(loader.load())
+    vectordb = split_and_embed_documents(documents)
+    vectordb.persist()
+    initialize_chain()
+
+    return jsonify({"message": "PDF uploaded and processed successfully."})
+
+#Endpoint to get the list of companies
+@app.route('/companies', methods=['GET'])
+def get_companies():
+    companies = []
+    for company,file,status in files_dictionary:
+        if status == "Processed":
+            companies.append(company)
+    return jsonify(companies)
 
 # Endpoint to load data
 @app.route('/load_data', methods=['POST'])
