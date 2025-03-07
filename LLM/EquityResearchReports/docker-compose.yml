@@ -2,27 +2,46 @@ version: '3.8'
 
 services:
   backend:
-    image: shrinix/ai_ml:equityresearch-backend-latest
+    image: shrinix/ai_ml:equityresearch-backend-linux_v1.0.1
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      - FLASK_ENV=development
+      - CORS_ORIGINS=*
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
     ports:
       - "5001:5001"
+    expose:
+      - "5001"
     volumes:
-      - /Users/shriniwasiyengar/git/python_ML/LLM/EquityResearchReports/pdf-data/:/app/pdfs/ 
+      - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/ 
     env_file:
       - ./backend/backend.env
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - my_network
+
 
   frontend:
-    image: shrinix/ai_ml:equityresearch-frontend-latest
+    image: shrinix/ai_ml:equityresearch-frontend-linux_v1.0.1
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: frontend
     environment:
-        BASE_URL: ${BASE_URL:-http://localhost}
+        BASE_URL: ${BASE_URL:-http://localhost:5001}
     ports:
       - "4200:4200"
+    expose:
+      - "4200"
     depends_on:
       - backend
+    networks:
+      - my_network
+
+
+networks:
+  my_network:
+    driver: bridge

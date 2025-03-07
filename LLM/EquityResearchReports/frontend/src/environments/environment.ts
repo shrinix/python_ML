@@ -4,7 +4,7 @@
 
 export const environment = {
     production: false,
-    baseURL: 'http://127.0.0.1:5001' //Use full URL starting with http:// or https://
+    baseURL: 'http://localhost:5001'
   };
   
   /*

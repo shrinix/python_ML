@@ -1,6 +1,7 @@
 # __import__('pysqlite3')
 import sys
 # sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+import logging
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
@@ -18,6 +19,10 @@ from langchain_openai import OpenAIEmbeddings
 import tiktoken
 import hashlib
 import time
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 #check if OPEN_AI_API_KEY is set
 if 'OPENAI_API_KEY' not in os.environ:
@@ -61,7 +66,7 @@ files_dictionary = []
 
 @app.after_request
 def after_request(response):
-    # response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
@@ -206,6 +211,9 @@ def internal_initialize():
         vectordb = load_data(data_dir)
         initialize_chain()
 
+    print("Data loaded and chain initialized successfully.")
+    return
+
 # Call internal_initialize when the application starts
 internal_initialize()
 
@@ -249,6 +257,7 @@ def get_companies():
     for company,file,status in files_dictionary:
         if status == "Processed":
             companies.append(company)
+    print("Companies: ", companies)
     return jsonify(companies)
 
 # Endpoint to load data
