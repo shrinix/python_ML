@@ -1,12 +1,17 @@
 version: '3.8'
 
 services:
-  backend:
-    image: shrinix/ai_ml:equityresearch-backend-linux_v1.0.1
+  backend-chat-service:
+    image: shrinix/ai_ml:equityresearch-backend-chat-service_v1.0.1
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: backend
+      context: ./backend/chat-service
+      dockerfile: Dockerfile-chat-service
+      args:
+        - HOME_DIR=${HOME_DIR}
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    container_name: er-backend-chat-service
     environment:
       - FLASK_ENV=development
       - CORS_ORIGINS=*
@@ -19,17 +24,46 @@ services:
     volumes:
       - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/ 
     env_file:
-      - ./backend/backend.env
+      - ./backend/chat-service/backend.env
     networks:
       - my_network
 
+  backend-metrics-service:
+    image: shrinix/ai_ml:equityresearch-backend-metrics-service_v1.0.1
+    build:
+      context: ./backend/metrics-service
+      dockerfile: Dockerfile-metrics-service
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      args:
+        - HOME_DIR=${HOME_DIR}
+    container_name: er-backend-metrics-service
+    environment:
+      - FLASK_ENV=development
+      - CORS_ORIGINS=*
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "5002:5002"
+    expose:
+      - "5002"
+    volumes:
+      - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/ 
+    # env_file:
+    #   - ./backend/chat-service/backend.env
+    networks:
+      - my_network
 
   frontend:
-    image: shrinix/ai_ml:equityresearch-frontend-linux_v1.0.1
+    image: shrinix/ai_ml:equityresearch-frontend_v1.0.1
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
+      dockerfile: Dockerfile-frontend
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    container_name: er-frontend-service
     environment:
         BASE_URL: ${BASE_URL:-http://localhost:5001}
     ports:
@@ -37,10 +71,10 @@ services:
     expose:
       - "4200"
     depends_on:
-      - backend
+      - backend-chat-service
+      - backend-metrics-service
     networks:
       - my_network
-
 
 networks:
   my_network:

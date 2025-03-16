@@ -1,0 +1,8 @@
+langchain
+flask
+flask_session
+flask_cors
+python-dotenv
+numpy==1.26.4
+datasets
+ragas

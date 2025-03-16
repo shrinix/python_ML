@@ -1,4 +1,4 @@
-<div class="chat-container">
+<div class="chat-container" style="display: flex;">
   <div class="flex-container">
     <div class="commands-panel">
       <h3>Select Company</h3>
@@ -12,12 +12,12 @@
         </li>
       </ul>
     </div>
-    <div class="panel">
+    <div class="center-panel" style="flex: 1; margin-right: 20px;">
       <div class="input-container">
-        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)">
+        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)" style="width: 75%;">
         <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
       </div>
-      <div class="response-box">
+      <div class="response-box" style="height: 83%; overflow-y: scroll;">
         <div *ngFor="let message of messages">
           <p *ngIf="!message.isHtml" [ngClass]="message.cssClass">
             <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> {{message.content}}
@@ -29,12 +29,32 @@
     </div>
   </div>
 </div>
-<div class="upload-panel">
-  <h3>Upload PDF for new Company</h3>
-  <input type="text" [(ngModel)]="uploadedCompanyName" placeholder="Enter company name" (input)="clearUploadError()" style="width: 80%;">
-  <input type="file" accept="application/pdf" #fileInput>
-  <br>
-  <br>
-  <button (click)="uploadPdf()">Submit</button>
-  <div *ngIf="uploadError" class="error-message">{{ uploadError }}</div>
+<div class="right-panel" style="flex: 1;">
+    <div class="upload-section">
+      <h3>Upload PDF for new Company</h3>
+      <input type="text" [(ngModel)]="uploadedCompanyName" placeholder="Enter company name" (input)="clearUploadError()" style="width: 70%;">
+      <input type="file" accept="application/pdf" #fileInput>
+      <br>
+      <br>
+      <button (click)="uploadPdf()">Submit</button>
+      <div *ngIf="uploadError" class="error-message">{{ uploadError }}</div>
+    </div>
+    <hr>
+    <div class="metrics-section">
+      <h3>Metrics (RAGAS)</h3>
+      <table>
+        <tr>
+        <th>Metric</th>
+        <th>Value</th>
+        </tr>
+        <tr>
+        <td>Faithfullness</td>
+        <td>{{ ragas_faithfullness }}</td>
+        </tr>
+        <tr>
+        <td>Relevancy</td>
+        <td>{{ ragas_relevancy }}</td>
+        </tr>
+      </table>
+  </div>
 </div>

@@ -1,0 +1,39 @@
+Loggint setup completed:  /Users/shriniwasiyengar/git/python_ML/LLM/EquityResearchReports/backend/chat-service/logs
+Virtual environment:  None
+Python path:  None
+Loading environment variables from backend-local.env
+Loading data from:  /Users/shriniwasiyengar/git/python_ML/LLM//EquityResearchReports/pdf-data/
+Processing_file:  3p-learning-2015-db.pdf
+Data loaded and chain initialized successfully.
+Loading data from:  /Users/shriniwasiyengar/git/python_ML/LLM//EquityResearchReports/pdf-data/
+Processing_file:  3p-learning-2015-db.pdf
+Processing_file:  3p-learning-2015-db.pdf
+Data loaded and chain initialized successfully.
+Query:  What are the analyst ratings for 3P Learning?
+Tokens in query: 11
+Tokens in chat history: 0
+Total tokens: 11
+Answer:  The analyst ratings for 3P Learning are Buy with a price target of $2.70.
+Response headers:  Content-Type: application/json
+Content-Length: 507
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Methods: GET, POST
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Private-Network: true
+
+
+Query:  What are the analyst ratings for 3P Learning?
+Tokens in query: 11
+Tokens in chat history: 31
+Total tokens: 42
+Answer:  The analyst rating for 3P Learning from Deutsche Bank AG/Sydney is a Buy rating.
+Response headers:  Content-Type: application/json
+Content-Length: 514
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Methods: GET, POST
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Private-Network: true
+
+

@@ -24,6 +24,7 @@ export class ChatComponent implements OnInit {
   topic: string = '';
   chat_response: string;
   chat_answer: string;
+  chat_source_docs: string;
   question: string = '';
   commands: string[] = [
     'Provide a summary of the research report for {company}.',
@@ -43,6 +44,8 @@ export class ChatComponent implements OnInit {
   uploadedCompanyName: string='';
   uploadError: string = '';
   selectedFile: File | null = null;
+  ragas_faithfullness: string = '';
+  ragas_relevancy: string = '';
 
   constructor(private route: ActivatedRoute, private chatService: ChatService, private http: HttpClient, private router: Router) {
     //this.loadChatHistory();
@@ -87,19 +90,35 @@ export class ChatComponent implements OnInit {
     console.log('Invoking generateAnswer from ChatComponent: ' + question);
     this.chatService.getAnswer(this.question).subscribe((response: any) => {
       console.log('response: ' + response.answer);
+      if (response.metrics) {
+        console.log('metrics: ' + response.metrics);
+        this.ragas_faithfullness = response.metrics.faithfullness;
+        this.ragas_relevancy = response.metrics.relevancy;
+      }
+
       this.chat_answer = response.answer;
+      this.chat_source_docs = response.source_documents;
       
       // Format the bot response into a multiline format if it contains a numbered list
-      const items = this.chat_answer.split(/(\d+\.\s+)/g).filter(Boolean);
-      for (let i = 1; i < items.length; i += 2) {
-        items[i] = items[i] + (items[i + 1] || '');
-        if (items[i + 1]) {
-          items.splice(i + 1, 1);
+      const items = this.chat_answer.split(/(\d+\.\s)/g).filter(Boolean); // Split by numbered items
+      const formattedItems: string[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (/\d+\.\s/.test(items[i])) {
+          // If the current item is a number (e.g., "2. "), combine it with the next item
+          const numberedLine = items[i] + (items[i + 1] || '');
+          formattedItems.push(numberedLine.trim());
+          i++; // Skip the next item since it's already combined
+        } else {
+          // If it's not a number, just add it
+          formattedItems.push(items[i].trim());
         }
       }
-      
+
+      // Join the formatted items with <br> for HTML line breaks
+      this.chat_answer = formattedItems.join('<br>');
+
       // Ensure currency values are not split
-      this.chat_answer = items.join('<br>').replace(/(\b[A-Z]{3})<br>(\d+)/g, '$1 $2'); // Use <br> for HTML line breaks
+      this.chat_answer = this.chat_answer.replace(/(\b[A-Z]{3})<br>(\d+)/g, '$1 $2');
 
       const timestamp = new Date().toLocaleString(undefined, {timeZoneName: 'short'});
       const sequence = this.messages.length + 1;
@@ -110,6 +129,11 @@ export class ChatComponent implements OnInit {
       // this.scrollToBottom();
       
       this.chatService.addMessage(userMessage);
+
+      //Add the source documents to the chat
+      if (this.chat_source_docs) {
+        botMessage.content += '<br>Sources:--><br>' + JSON.stringify(this.chat_source_docs);
+      }
       this.chatService.addMessage(botMessage);
       this.scrollToBottom()
     },
@@ -215,6 +239,8 @@ export class ChatComponent implements OnInit {
         // Reset the file input value to allow re-selection of the same file
         this.fileInput.nativeElement.value = '';
         this.selectedFile = null; // Clear the selected file
+        //clear the uploaded company name
+        this.uploadedCompanyName = '';
       },
       (error: any) => {
         console.error('Error:', error);

@@ -43,12 +43,17 @@ export class ChatService {
   getAnswer(question: string): any {
     console.log ('question: '+question);
     const params = new HttpParams().set('userMessage', question);
-    const headers = new HttpHeaders()
+    // const headers = new HttpHeaders()
       // .set('Access-Control-Allow-Origin', '*')
       //.set('Content-Type', 'application/json')
       //.set('origin','http://52.14.147.215:4200/'); // replace with the actual origin of your client application
 
-    return this.httpClient.get<ChatResponse>(`${this.baseURL}/generate`, { params, headers });
+    return this.httpClient.get<ChatResponse>(`${this.baseURL}/generate`, { params }).pipe(
+      catchError((error: any) => {
+        console.error('Error getting answer:', error);
+        return throwError(error);
+      })
+    );
   }
 
   addMessage(message: ChatMessage) {

@@ -1,0 +1,21 @@
+langchain
+pypdf
+flask
+flask_session
+flask_cors
+python-dotenv
+langchain_community
+langchain_openai
+chromadb
+numpy==1.26.4
+#imports for evaluation of RAG results
+sacrebleu
+rouge_score
+bert_score
+torch
+# pysqlite3-binary #required on linux systems for chromadb
+tf-keras
+rouge
+flashrank
+datasets
+ragas

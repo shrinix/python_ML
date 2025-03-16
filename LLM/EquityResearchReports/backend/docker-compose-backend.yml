@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  chat-service:
+    image: equityresearch-backend-chat-service_v1.0.1
+    build:
+      context: ./backend/chat-service
+      dockerfile: Dockerfile-chat-service
+      args:
+        - HOME_DIR=${HOME_DIR}
+    container_name: chat-service
+    environment:
+      - FLASK_ENV=development
+      - CORS_ORIGINS=*
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "5001:5001"
+    expose:
+      - "5001"
+    volumes:
+      - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/
+    env_file:
+      - ./backend/chat-service/backend.env
+    networks:
+      - my_network
+
+  metrics-service:
+    image: equityresearch-backend-metrics-service_v1.0.1
+    build:
+      context: ./backend/metrics-service
+      dockerfile: Dockerfile
+      args:
+        - HOME_DIR=${HOME_DIR}
+    container_name: metrics-service
+    environment:
+      - FLASK_ENV=development
+      - CORS_ORIGINS=*
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "5002:5002"
+    expose:
+      - "5002"
+    volumes:
+      - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/
+    # env_file:
+    #   - ./backend/metrics-service/service2.env
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
