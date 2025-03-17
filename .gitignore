@@ -1,4 +1,8 @@
 .DS_Store
+**/backend/data/*
+**/.vscode/
+**/.venv/
+**/flask_session/
 **/.idea/
 **/.angular/
 **/dist/
