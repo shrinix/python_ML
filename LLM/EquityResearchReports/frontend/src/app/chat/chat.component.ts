@@ -26,6 +26,7 @@ export class ChatComponent implements OnInit {
   chat_answer: string;
   chat_source_docs: string;
   question: string = '';
+  loading: boolean = false; // Tracks whether the API call is in progress
   commands: string[] = [
     'Provide a summary of the research report for {company}.',
     'What are the analyst ratings for {company}?',
@@ -44,6 +45,7 @@ export class ChatComponent implements OnInit {
   uploadedCompanyName: string='';
   uploadError: string = '';
   selectedFile: File | null = null;
+  ragas_score: string = '';
   ragas_faithfullness: string = '';
   ragas_relevancy: string = '';
 
@@ -88,12 +90,24 @@ export class ChatComponent implements OnInit {
 
   generateAnswer(question: string) {
     console.log('Invoking generateAnswer from ChatComponent: ' + question);
+    console.log('Setting loading spinner to true');
+    this.loading = true; //show loading spinner
     this.chatService.getAnswer(this.question).subscribe((response: any) => {
+      console.log('Response received, setting loading to false');
+      this.loading = false; //hide spinner
       console.log('response: ' + response.answer);
       if (response.metrics) {
         console.log('metrics: ' + response.metrics);
-        this.ragas_faithfullness = response.metrics.faithfullness;
-        this.ragas_relevancy = response.metrics.relevancy;
+        //response.metrics is an array that looks like this:
+        //{RAGAS Score: 0.97, answer_relevancy: 0.95, faithfulness: 1,
+        // response: "The target price for 3P Learning is set at $2.70 per share based on the Discounted Cash Flow (DCF) methodology.",
+        // retrieved_contexts: ["14 January 2015 ↵Emerging Companies ↵3P Learning ↵…ur $2.70 DCF. Key inputs: beta 1.2; WACC 10.8%; &", "14 January 2015 ↵Emerging Companies ↵3P Learning ↵…ur $2.70 DCF. Key inputs: beta 1.2; WACC 10.8%; &", "14 January 2015 ↵Emerging Companies ↵3P Learning ↵…ur $2.70 DCF. Key inputs: beta 1.2; WACC 10.8%; &", "14 January 2015 ↵Emerging Companies ↵3P Learning ↵…rix to WACC & TGR.   ↵ ↵PT set equal to $2.70 DCF", "14 January 2015 ↵Emerging Companies ↵3P Learning ↵…rix to WACC & TGR.   ↵ ↵PT set equal to $2.70 DCF", "14 January 2015 ↵Emerging Companies ↵3P Learning ↵…rix to WACC & TGR.   ↵ ↵PT set equal to $2.70 DCF"],
+        // user_input: "What is the target price for 3P Learning?"}
+        //we can access the RAGAS score, answer_relevancy, and faithfulness from the response
+        //set the ragas_faithfullness and ragas_relevancy properties to the corresponding values in the response      this
+        this.ragas_score = response.metrics[0]['RAGAS Score'];
+        this.ragas_faithfullness = response.metrics[0].faithfulness; 
+        this.ragas_relevancy = response.metrics[0].answer_relevancy;
       }
 
       this.chat_answer = response.answer;
@@ -139,6 +153,7 @@ export class ChatComponent implements OnInit {
     },
       (error: any) => {
         console.error('Error:', error);
+        this.loading = false; // Set loading to false even if the API call fails
       });
   }
 

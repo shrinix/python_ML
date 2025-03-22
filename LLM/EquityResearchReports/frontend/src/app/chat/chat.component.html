@@ -5,12 +5,16 @@
       <select [(ngModel)]="selectedCompany" (change)="selectCompany(selectedCompany)">
         <option *ngFor="let company of companies" [value]="company">{{ company }}</option>
       </select>
+      <hr>
       <h3>Ready-to-use Commands</h3>
       <ul>
         <li *ngFor="let command of updatedCommands" (click)="sendCommand(command)">
           {{ command }}
         </li>
       </ul>
+    </div>
+    <div class="spinner-container" *ngIf="loading">
+      <div class="spinner"></div>
     </div>
     <div class="center-panel" style="flex: 1; margin-right: 20px;">
       <div class="input-container">
@@ -42,18 +46,22 @@
     <hr>
     <div class="metrics-section">
       <h3>Metrics (RAGAS)</h3>
-      <table>
+      <table style="border-collapse: collapse; width: 100%;">
         <tr>
-        <th>Metric</th>
-        <th>Value</th>
+          <th style="border: 1px solid black; padding: 8px;">Metric</th>
+          <th style="border: 1px solid black; padding: 8px;">Value</th>
         </tr>
         <tr>
-        <td>Faithfullness</td>
-        <td>{{ ragas_faithfullness }}</td>
+          <td style="border: 1px solid black; padding: 8px;">RAGAS Score</td>
+          <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_score }}</td>
         </tr>
         <tr>
-        <td>Relevancy</td>
-        <td>{{ ragas_relevancy }}</td>
+          <td style="border: 1px solid black; padding: 8px;">Faithfullness</td>
+          <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_faithfullness }}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid black; padding: 8px;">Relevancy</td>
+          <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_relevancy }}</td>
         </tr>
       </table>
   </div>

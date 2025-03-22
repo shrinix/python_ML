@@ -9,4 +9,5 @@ langchain_community
 langchain_openai
 chromadb
 numpy==1.26.4
+fpdf==1.7.2
 # pysqlite3-binary #required on linux systems for chromadb

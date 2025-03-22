@@ -10,7 +10,7 @@ from ragas.metrics import (
 )
 app = Flask(__name__)
 
-@app.route('/generate_metrics', methods=['POST'])
+@app.route('/generate_metrics', methods=['GET', 'POST'])
 def generate_metrics_endpoint():
     data = request.json
     queries = data.get('queries')

@@ -22,30 +22,58 @@ import hashlib
 import time
 import pandas as pd
 import requests
+import json
+from fpdf import FPDF
 
 #set environment variable to disable ChromadB telemetry
 os.environ['ANONYMIZED_TELEMETRY'] = 'False'
+global logger
 
-# Set up logging
-log_dir = os.path.join(os.path.dirname(__file__), 'logs')
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir, exist_ok=True)
+cache = {}
+def generate_cache_key(query: str) -> str:
+        """
+        Generate a unique cache key for a given query.
+        
+        Args:
+            query (str): The query string.
+        
+        Returns:
+            str: The cache key.
+        """
+        return hashlib.md5(query.encode()).hexdigest()
 
-logging.basicConfig(level=logging.INFO)
-# Ensure the logs directory exists
+def logging_setup():
+    LOGS_DIRECTORY = os.getenv('LOGS_DIRECTORY', '/app/logs/')
 
-logger = logging.getLogger(__name__)
-log_filename = os.path.join(log_dir, f"ER-chat-service-{time.strftime('%Y-%m-%d_%H-%M-%S')}.log")
-sys.stdout = open(log_filename, 'a', buffering=1)
-sys.stderr = open(log_filename, 'a')
-log_filename = f"ER-chat-service-{time.strftime('%Y-%m-%d_%H-%M-%S')}.log"
-file_handler = logging.FileHandler(log_filename)
-file_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+    # Set up logging
+    log_dir = os.path.join(os.path.dirname(__file__), LOGS_DIRECTORY)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
 
-print("Loggint setup completed: ", log_dir)
+    logging.basicConfig(level=logging.INFO)
+    # Ensure the logs directory exists
+
+    global logger
+    logger = logging.getLogger(__name__)
+    log_filename = os.path.join(log_dir, f"ER-chat-service-{time.strftime('%Y-%m-%d_%H-%M-%S')}.log")
+    file_handler = logging.FileHandler(log_filename)
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Redirect stdout and stderr to the logger
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    sys.stdout = open(log_filename, 'a', buffering=1)
+    sys.stderr = sys.stdout
+
+    logger.info(f"Logging setup completed: {log_dir}")
+
+logging_setup()
 
 # Set display options to control wrapping
 pd.set_option('display.max_columns', None)  # Do not truncate the list of columns
@@ -53,18 +81,15 @@ pd.set_option('display.max_rows', None)     # Do not truncate the list of rows
 pd.set_option('display.width', 1000)        # Set the display width to a large value
 pd.set_option('display.max_colwidth', 50)   # Set the maximum column width
 pd.set_option('display.colheader_justify', 'left')  # Justify column headers to the left
-
-#print value of environment variable $VIRTUAL_ENV
-print("Virtual environment: ", os.getenv('VIRTUAL_ENV'))
-#print value of environment variable $PYTHONPATH
-print("Python path: ", os.getenv('PYTHONPATH'))
-#print versions of langchain and langchain_openai
-# print("Langchain OpenAI version: ", langchain_openai.__version__)
+logger.info(f"Virtual environment: {os.getenv('VIRTUAL_ENV')}")
+logger.info(f"Python path: {os.getenv('PYTHONPATH')}")
+#logger.info versions of langchain and langchain_openai
+# logger.info("Langchain OpenAI version: ", langchain_openai.__version__)
     
 
 #check if OPEN_AI_API_KEY is set
 if 'OPENAI_API_KEY' not in os.environ:
-    print("Please set the OPENAI_API_KEY environment variable")
+    logger.info("Please set the OPENAI_API_KEY environment variable.")
     sys.exit(1)
 
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -72,14 +97,19 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Start the Flask application with a specific .env file.')
 parser.add_argument('--env_file', type=str, required=False, help='Path to the .env file')
-args = parser.parse_args()
+try:
+    args = parser.parse_args()
+except SystemExit as e:
+    if e.code == 2:  # Error code 2 indicates invalid arguments
+        logger.info("No valid arguments provided. Using default settings.")
+        args = argparse.Namespace(env_file=None)
 
 if args.env_file:
-    print(f"Loading environment variables from {args.env_file}")
+    logger.info(f"Loading environment variables from {args.env_file}")
     # Load environment variables from the specified .env file
     load_dotenv(args.env_file)
 else:
-    print("No .env file specified. Loading environment variables from backend.env")
+    logger.info("No .env file specified. Loading environment variables from backend.env")
     # Load environment variables from .env file
     load_dotenv('backend.env')
 
@@ -91,8 +121,9 @@ cors_origins = os.getenv('CORS_ORIGINS', '*')
 CORS(app,supports_credentials=True, resources={r"/*": {"origins": cors_origins}})
 
 # Use environment variables
-app.config['ENV'] = os.getenv('FLASK_ENV', 'production')
+app.config['ENV'] = os.getenv('FLASK_ENV', 'development')
 PDF_DIRECTORY = os.getenv('PDF_DIRECTORY', '/app/pdfs/')
+output_dir = os.getenv('OUTPUT_DIR', '/app/output/')
 OPEN_API_KEY = os.getenv('OPENAI_API_KEY')
 
 home_dir = os.path.expanduser("~")
@@ -111,7 +142,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Access-Control-Allow-Private-Network', 'true')
-    print("Response headers: ", response.headers)
+    logger.info(f"Response headers: {response.headers}")
     return response
 
 # Function to generate a hash for a document
@@ -135,7 +166,7 @@ def upload_pdf():
     
     pdf_file = request.files['file']
 
-    print("Uploading file: ", pdf_file.filename)
+    logger.info(f"Uploading file: {pdf_file.filename}")
     #if user does not select file, browser also
     #submit an empty part without filename
     if pdf_file.filename == '':
@@ -143,7 +174,7 @@ def upload_pdf():
     
     #check if the file exists in the data directory
     if os.path.exists(data_dir + pdf_file.filename):
-        print("File exists in the data directory")
+        logger.info("File exists in the data directory")
         #rename the existing file with a timestamp and move it to the archive directory
         #Use the format filename-<MM-DD-YYYY>-<HH-MM-SS>.pdf for the archived file
         timestamp = time.strftime("%m-%d-%Y-%H-%M-%S")
@@ -189,7 +220,7 @@ def split_and_embed_documents(documents):
     return vectordb
 
 def load_data(data_dir):
-    print("Loading data from: ", data_dir)
+    logger.info(f"Loading data from: {data_dir}")
     #delete data directory used by ChromaDB, if it exists
     # if os.path.exists("./data"):
     #     os.system("rm -rf ./data")
@@ -205,10 +236,10 @@ def load_data(data_dir):
     # loop through the files_dictionary list and load the documents
     for company_name, file, status in files_dictionary:
         if file.endswith(".pdf"):
-            print("Processing_file: ",file)
+            logger.info(f"Processing_file: {file}")
             #check if the file exists in the data directory
             if not os.path.exists(data_dir + file):
-                print(f"File {file} does not exist in the data directory ... skipping")
+                logger.info(f"File {file} does not exist in the data directory ... skipping")
                 continue
             pdf_path = data_dir + file
             loader = PyPDFLoader(pdf_path)
@@ -262,12 +293,13 @@ def set_files_dictionary():
 
 def internal_initialize():
     global vectordb
+    
     with app.app_context():
         set_files_dictionary()
         vectordb = load_data(data_dir)
         initialize_chain()
 
-    print("Data loaded and chain initialized successfully.")
+    logger.info("Data loaded and chain initialized successfully.")
     return
 
 # Call internal_initialize when the application starts
@@ -313,7 +345,7 @@ def get_companies():
     for company,file,status in files_dictionary:
         if status == "Processed":
             companies.append(company)
-    print("Companies: ", companies)
+    logger.info(f"Companies: {companies}")
     return jsonify(companies)
 
 # Endpoint to load data
@@ -332,17 +364,42 @@ def get_source_documents(source_docs):
     return final_source_docs
 
 def generate_metrics(queries, candidates, contexts):
-    url = "http://<other_app_host>:<other_app_port>/generate_metrics"
+    # Get the URL from the environment variable, with a fallback to localhost for local development
+    url = os.getenv("METRICS_SERVICE_URL", "http://localhost:5002/generate_metrics")
     payload = {
         "queries": queries,
         "candidates": candidates,
         "contexts": contexts
     }
-    response = requests.post(url, json=payload)
+    logger.info("Inovking metrics endpoint ...")
+    logger.info(f"Payload: {payload}")
+    metrics_df = None
+    try:
+        response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=60)
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx and 5xx)
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"HTTP error occurred: {http_err}")
+        raise
+    except Exception as err:
+        logger.error(f"Other error occurred: {err}")
+        raise
     if response.status_code == 200:
-        return response.json()
+        logger.info("Metrics generated successfully.")
+        logger.info(f"Metrics response: {response.text}")
+        #convert json response to a pandas dataframe
+         # Parse the JSON response
+        response_json = response.json()
+        # Convert the metrics data back to a pandas DataFrame
+        metrics_df = pd.json_normalize(response_json)
+        logger.info("Metrics DataFrame:")
+        if metrics_df is not None:
+            logger.info(metrics_df)
+        else:
+            logger.info("Metrics DataFrame is None.")
     else:
         raise Exception(f"Failed to generate metrics: {response.text}")
+    
+    return metrics_df
 
 def answer_with_reranking(query, chat_history, vectordb):
     reranking_url = "http://<other_app_host>:<other_app_port>/reranking_answer"
@@ -367,8 +424,8 @@ def chat_endpoint():
         return jsonify({"error": "userMessage is required"}), 400
 
     #result = chain.invoke({"question": query, "chat_history": chat_history})
-    print("Query: ", query)
-    metrics = False
+    logger.info(f"Query: {query}")
+    calc_metrics = True
     rerank = False
 
     try:
@@ -377,46 +434,184 @@ def chat_endpoint():
         history_tokens = sum(count_tokens(q) + count_tokens(a) for q, a in chat_history)
         total_tokens = query_tokens + history_tokens
         
-        print(f"Tokens in query: {query_tokens}")
-        print(f"Tokens in chat history: {history_tokens}")
-        print(f"Total tokens: {total_tokens}")
-    
+        logger.info(f"Tokens in query: {query_tokens}")
+        logger.info(f"Tokens in chat history: {history_tokens}")
+        logger.info(f"Total tokens: {total_tokens}")
+
         final_result=[]
-        queries = [query]
+        queries = query
         metrics=[]
         candidates=[]
-        if rerank==True:
-            print("Reranking ...")
-            final_result = answer_with_reranking(query, chat_history, vectordb)
-            candidates=final_result['result']
-            chat_history.append((query, final_result["result"]))
-            print("Ranked result: ", candidates)
+        contexts=[]
+    
+        cache_key = generate_cache_key(query)
+        if cache_key in cache:
+            logger.info("Using cached response ...")
+            final_result = cache[cache_key]
         else:
-            final_result = chain.invoke({"question": query, "chat_history": chat_history})        
-            chat_history.append((query, final_result["answer"]))
-            print("Answer: ", final_result["answer"])
+            logger.info("Cache miss ...")
+            if rerank==True:
+                logger.info("Reranking ...")
+                final_result = answer_with_reranking(query, chat_history, vectordb)
+                candidates=final_result['result']
+                chat_history.append((query, final_result["result"]))
+                logger.info(f"Ranked result: {candidates}")
+            else:
+                final_result = chain.invoke({"question": query, "chat_history": chat_history})        
+                chat_history.append((query, final_result["answer"]))
+                logger.info(f"Answer: {final_result['answer']}")
 
-        if metrics==True:
-            candidates.append(candidates)
-            metrics = generate_metrics(queries, candidates, get_source_documents(final_result["source_documents"]))
-            return jsonify({"userMessage": query, "answer": final_result, "source_documents": get_source_documents(final_result["source_documents"]), "metrics": metrics})
+            # Cache the response
+            cache[cache_key] = final_result
+
+        if calc_metrics==True:
+        
+            logger.info("Invoking metrics endpoint ...")
+            if rerank==True:
+                candidates=final_result['result']
+            else:
+                candidates=final_result['answer']
+            
+            contexts.append([doc.page_content for doc in final_result['source_documents']])
+            queries, candidates, contexts = [queries], [candidates], contexts
+            metrics = generate_metrics(queries, candidates, contexts)
+            logger.info(f"Metrics response: {metrics}")
+            return jsonify({
+                "userMessage": query,
+                "answer": final_result["answer"],
+                "source_documents": get_source_documents(final_result["source_documents"]),
+                "metrics": metrics.to_dict(orient='records')  # Convert DataFrame to a list of dictionaries
+            })
         else:
             return jsonify({
                 "userMessage": query,
                 "answer": final_result["answer"],
                 "source_documents": get_source_documents(final_result["source_documents"])
-            })
+             })
         
     except Exception as e:
-        print(f"Error in /generate endpoint: {e}")
+        logger.info(f"Error in /generate endpoint: {e}")
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(f"Exception type: {exc_type}, File name: {fname}, Line number: {exc_tb.tb_lineno}")
+        logger.info(f"Exception type: {exc_type}, File name: {fname}, Line number: {exc_tb.tb_lineno}")
         return jsonify({"error": str(e)}), 500
+
+# Endpoint to handle chat queries
+@app.route('/generate_IA_report', methods=['GET'])
+def generate_investment_analysis_report(company):
+    system_prompt = "You are an AI assistant helping with investment analysis. Provide concise and accurate responses based on the research reports."
+
+    #create a structure for an investment analysis template with a placeholder
+    business_model = []
+    market_position = []
+    growth_strategy = []
+    pricing_power = []
+    financial_performance = []
+    industry_trends = []
+    competitive_landscape = []
+    transaction_comparables = []
+    investment_report = {
+        "1. **Business Model**": business_model,
+        "2. **Market Position**": market_position,
+        "3. **Growth Strategy**": growth_strategy,
+        "4. **Pricing Power**": pricing_power,
+        "5. **Financial Performance**": financial_performance,
+        "6. **Industry Trends**": industry_trends,
+        "7. **Competitive Landscape**": competitive_landscape,
+        "8. **Transaction Comparables**": transaction_comparables
+    }
+
+    #Some of these queries may need creation of agents to retrieve realtime information from the internet.
+    queries = [
+            f" Evaluate the scalability, cash generation, and capital-light nature of {company}'s business model.?",
+            f'What is the market position of the {company} in local and global markets?',
+            f'Evaluate the growth strategy of {company} based on factors like expanding the client base, increasing market penetration, cross-selling products, and utilizing pricing levers',
+            f'Assess the pricing power of {company} based on factors like customer base fragmentation, product quality, and barriers to entry',
+            f"Provide details on {company}'s financial performance and valuation.",
+            f"What are the current industry trends in the {company}'s line of business and how is {company} positioned to capitalize on these trends?",
+            f'How does the analyst justify the target price for {company}?',
+            f'Who are the competitors of {company} and how do their metrics compare with that of {company}?',
+            f'Analyze recent transactions in the space of {company} and compare them with the valuation of {company}',
+    ]
+
+    # Create a mapping of the queries to the corresponding sections in the investment report
+    queries_section_mapping = {
+        queries[0]:"1. **Business Model**",
+        queries[1]:"2. **Market Position**",
+        queries[2]:"3. **Growth Strategy**",
+        queries[3]:"4. **Pricing Power**",
+        queries[4]:"5. **Financial Performance**",
+        queries[5]:"6. **Industry Trends**",
+        queries[6]:"7. **Competitive Landscape**",
+        queries[7]:"8. **Transaction Comparables**"
+    }
+    # Create a ConversationalRetrievalChain with a ChatOpenAI model and a VectorDB retriever
+    chain = ConversationalRetrievalChain.from_llm(
+        ChatOpenAI(temperature=0.7, model_name='gpt-3.5-turbo'),
+        retriever=vectordb.as_retriever(search_kwargs={'k': 6}),
+        return_source_documents=True,
+        verbose=False)
+     
+    # Loop through the section_queries_mapping and populate the investment report template
+    for query, section in queries_section_mapping.items():
+        cache_key = generate_cache_key(query)
+        if cache_key in cache:
+            logger.info("Using cached response ...")
+            result = cache[cache_key]
+        else:
+            logger.info("Cache miss ...")
+            result = chain.invoke({"question": query, "chat_history": chat_history})
+            chat_history.append((query, result["answer"]))
+            # Cache the response
+            cache[cache_key] = result
+
+        # Wrap sentences to fit a page width
+        import textwrap
+        def custom_wrap(text, width):
+            lines = []
+            for paragraph in text.split("\n"):
+                if paragraph.strip().startswith(tuple("1234567890.")):
+                    lines.append(paragraph.strip())
+                else:
+                    lines.extend(textwrap.wrap(paragraph, width=width))
+            return "\n".join(lines)
+
+        wrapped_answer = custom_wrap(result["answer"], width=80)
+        investment_report[section] = wrapped_answer
+
+    logger.info("Investment Analysis Report Generated:")
+    # logger.info(json.dumps(investment_report, indent=4))
+
+    return jsonify({"IA_report":investment_report})
+
+def create_investment_report_PDF(investment_report, output_dir):
+    # #create a pdf file with the investment report
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Investment Analysis Report", ln=True, align='C')
+    for section, content in investment_report.items():
+        pdf.set_font("Arial", style="B", size=12)
+        pdf.multi_cell(0, 10, txt=section, align='L')
+        pdf.set_font("Arial", size=12)
+        pdf.multi_cell(0, 10, txt=content, align='L')
+        pdf.ln(5)  # Add spacing between sections
+    pdf.output(f"{output_dir}investment_analysis_report.pdf")
+    return
 
 if __name__ == '__main__':
     data_dir = PDF_DIRECTORY
     internal_initialize()
+
+    # investment_report = generate_investment_analysis_report("3P Learning")
+    # #save the investment report to a txt file
+    # with open(f"{output_dir}investment_analysis_report.txt", "w") as f:
+    #     for section, content in investment_report.items():
+    #         f.write(f"{section}\
+    #         \n{content}\n\n")
+
+    # create_investment_report_PDF(investment_report, output_dir)
+
     # load_data(data_dir)
     # query = "What is the analyst rating for the company 3P Learning?"
 
@@ -434,7 +629,7 @@ if __name__ == '__main__':
     #     f'Provide the key financial metrics used by the analyst to rate {company} and for each of these metrics provide the values',
     #     f'Provide the details of the analyst who wrote the report for {company}, their affiliation, and the date of the report.']
 
-    # #for each query in the queries array, invoke the chain and print the result
+    # #for each query in the queries array, invoke the chain and logger.info the result
     # unranked_candidates = []
     # unranked_contexts = []
     # ranked_candidates = []
@@ -449,12 +644,12 @@ if __name__ == '__main__':
     #     ranked_contexts.append([doc.page_content for doc in ranked_result['source_documents']])
 
     # ranked_metrics = generate_metrics(queries, ranked_candidates, ranked_contexts)
-    # print(ranked_metrics)
+    # logger.info(ranked_metrics)
     # #save the result to a csv file
     # ranked_metrics.to_csv("ranked_metrics.csv")
 
     # unranked_metrics = generate_metrics(queries, unranked_candidates, unranked_contexts)
-    # print(unranked_metrics)
+    # logger.info(unranked_metrics)
     # #save the result to a csv file
     # unranked_metrics.to_csv("unranked_metrics.csv")
 

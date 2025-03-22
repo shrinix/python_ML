@@ -1,0 +1,21 @@
+2025-03-22 23:20:28,223 - __main__ - INFO - Logging setup completed: /app/logs/
+2025-03-22 23:20:28,223 - __main__ - INFO - Virtual environment: None
+2025-03-22 23:20:28,223 - __main__ - INFO - Python path: None
+2025-03-22 23:20:28,256 - __main__ - INFO - No .env file specified. Loading environment variables from backend.env
+2025-03-22 23:20:28,257 - __main__ - INFO - Loading data from: /app/pdfs/
+2025-03-22 23:20:28,257 - __main__ - INFO - Processing_file: 3p-learning-2015-db.pdf
+2025-03-22 23:20:31,717 - __main__ - INFO - Data loaded and chain initialized successfully.
+2025-03-22 23:20:31,718 - __main__ - INFO - Loading data from: /app/pdfs/
+2025-03-22 23:20:31,718 - __main__ - INFO - Processing_file: 3p-learning-2015-db.pdf
+2025-03-22 23:20:33,061 - __main__ - INFO - Processing_file: 3p-learning-2015-db.pdf
+2025-03-22 23:20:36,536 - __main__ - INFO - Data loaded and chain initialized successfully.
+2025-03-22 23:20:58,257 - __main__ - INFO - Companies: ['3P Learning']
+2025-03-22 23:20:58,258 - __main__ - INFO - Response headers: Content-Type: application/json
+Content-Length: 20
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Methods: GET, POST
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Private-Network: true
+
+
