@@ -118,3 +118,16 @@
       transform: rotate(360deg);
     }
   }
+  .metrics-section table {
+    width: 100%; /* Make the table take up 100% of the parent container's width */
+    table-layout: fixed; /* Ensure columns are evenly distributed */
+    border-collapse: collapse; /* Ensure borders collapse for a cleaner look */
+  }
+  
+  .metrics-section th,
+  .metrics-section td {
+    word-wrap: break-word; /* Ensure long text wraps within the cell */
+    text-align: left; /* Align text to the left for better readability */
+    padding: 8px; /* Add padding for better spacing */
+    border: 1px solid black; /* Add borders for clarity */
+  }

@@ -1,6 +1,6 @@
 <div class="chat-container" style="display: flex;">
   <div class="flex-container">
-    <div class="commands-panel">
+    <div class="commands-panel" style="width: 15%;">
       <h3>Select Company</h3>
       <select [(ngModel)]="selectedCompany" (change)="selectCompany(selectedCompany)">
         <option *ngFor="let company of companies" [value]="company">{{ company }}</option>
@@ -16,9 +16,9 @@
     <div class="spinner-container" *ngIf="loading">
       <div class="spinner"></div>
     </div>
-    <div class="center-panel" style="flex: 1; margin-right: 20px;">
+    <div class="center-panel" style="width: 80%;; margin-right: 20px;">
       <div class="input-container">
-        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)" style="width: 75%;">
+        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)" style="width: 72%;">
         <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
       </div>
       <div class="response-box" style="height: 83%; overflow-y: scroll;">
@@ -33,7 +33,7 @@
     </div>
   </div>
 </div>
-<div class="right-panel" style="flex: 1;">
+<div class="right-panel" style="width: 15%;">
     <div class="upload-section">
       <h3>Upload PDF for new Company</h3>
       <input type="text" [(ngModel)]="uploadedCompanyName" placeholder="Enter company name" (input)="clearUploadError()" style="width: 70%;">
@@ -46,7 +46,7 @@
     <hr>
     <div class="metrics-section">
       <h3>Metrics (RAGAS)</h3>
-      <table style="border-collapse: collapse; width: 100%;">
+      <table style="border-collapse: collapse; width: 90%;">
         <tr>
           <th style="border: 1px solid black; padding: 8px;">Metric</th>
           <th style="border: 1px solid black; padding: 8px;">Value</th>
