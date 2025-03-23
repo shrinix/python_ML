@@ -6,6 +6,8 @@
 **/.idea/
 **/.angular/
 **/dist/
+**/outputs/
+**/logs/
 **/node_modules/
 **/__pycache__/
 *.keras
