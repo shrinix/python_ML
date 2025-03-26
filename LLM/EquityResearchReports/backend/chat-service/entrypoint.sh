@@ -24,5 +24,9 @@ ls -lia /app/ER_chat_service_v2.py
 
 env
 
-# Run the Python application
-exec "$PYTHON_PATH" /app/ER_chat_service_v2.py
+# Run the Python applications in the background
+"$PYTHON_PATH" /app/ER_chat_service_v2.py &
+"$PYTHON_PATH" /app/source-management-service.py &
+
+# Keep the container running
+wait

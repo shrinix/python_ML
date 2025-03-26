@@ -20,8 +20,10 @@ services:
       - METRICS_SERVICE_URL=http://backend-metrics-service:5002/generate_metrics
     ports:
       - "5001:5001"
+      - "5003:5003"
     expose:
       - "5001"
+      - "5003"
     volumes:
       - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/
       - ${HOME_DIR}/EquityResearchReports/logs/:/app/logs/

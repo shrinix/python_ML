@@ -24,6 +24,7 @@ import pandas as pd
 import requests
 import json
 from fpdf import FPDF
+from source_management_service_client import get_source_entries_by_status, create_source_entry
 
 #set environment variable to disable ChromadB telemetry
 os.environ['ANONYMIZED_TELEMETRY'] = 'False'
@@ -253,7 +254,7 @@ def load_data(data_dir):
         #     loader = TextLoader(text_path)
         #     documents.extend(loader.load())
             #replace the existing entry in files_dictionary with a new entry containing the company name and the status (whether file was processed or not)
-            status = "Processed"
+            status = "Active"
             for i, entry in enumerate(files_dictionary):
                 if entry[0] == company_name and entry[1] == file:
                     entry[2]= status
@@ -278,17 +279,23 @@ def initialize_chain():
 
 def set_files_dictionary():
     global files_dictionary
-    files_dictionary.append(["3P Learning", "3p-learning-2015-db.pdf","Not processed"])
-    # files_dictionary.append(["ABB", "abb-2015-nomura-global-markets-research.pdf","Not processed"])
-    # files_dictionary.append(["Apple Inc", "apple-inc-2010-goldman-sachs.pdf","Not processed"])
-    # files_dictionary.append(["CBS Corporation", "cbs-corporation-2015-db.pdf","Not processed"])
-    # files_dictionary.append(["Duke Energy", "duke-energy-2015-gs-credit-research.pdf","Not processed"])
-    # files_dictionary.append(["Imperial Oil Limited", "imperial-oil-limited-2013-rbc-capital-markets.pdf","Not processed"])
-    # files_dictionary.append(["Premier Foods", "premier-foods-2015-bc-credit-research.pdf","Not processed"])
-    # files_dictionary.append(["Sanofi", "sanofi-2014-gs-credit-research.pdf","Not processed"])
-    # files_dictionary.append(["Schneider Electric", "schneider-electric-2015-no.pdf","Not processed"])
-    # files_dictionary.append(["The Walt Disney Company", "the-walt-disney-company-2015-db.pdf","Not processed"])
-    # files_dictionary.append(["Virgin Money Holdings", "virgin-money-holdings-2015-gs.pdf","Not processed"])
+
+    source_entries = get_source_entries_by_status("active")
+    files_dictionary = []
+    for entry in source_entries:
+        files_dictionary.append([entry['company_name'], entry['pdf'], entry['status']]) 
+    
+    # files_dictionary.append(["3P Learning", "3p-learning-2015-db.pdf","inactive"])
+    # files_dictionary.append(["ABB", "abb-2015-nomura-global-markets-research.pdf","inactive"])
+    # files_dictionary.append(["Apple Inc", "apple-inc-2010-goldman-sachs.pdf","inactive"])
+    # files_dictionary.append(["CBS Corporation", "cbs-corporation-2015-db.pdf","inactive"])
+    # files_dictionary.append(["Duke Energy", "duke-energy-2015-gs-credit-research.pdf","inactive"])
+    # files_dictionary.append(["Imperial Oil Limited", "imperial-oil-limited-2013-rbc-capital-markets.pdf","inactive"])
+    # files_dictionary.append(["Premier Foods", "premier-foods-2015-bc-credit-research.pdf","inactive"])
+    # files_dictionary.append(["Sanofi", "sanofi-2014-gs-credit-research.pdf","inactive"])
+    # files_dictionary.append(["Schneider Electric", "schneider-electric-2015-no.pdf","inactive"])
+    # files_dictionary.append(["The Walt Disney Company", "the-walt-disney-company-2015-db.pdf","inactive"])
+    # files_dictionary.append(["Virgin Money Holdings", "virgin-money-holdings-2015-gs.pdf","inactive"])
     return files_dictionary
 
 def internal_initialize():
@@ -308,33 +315,48 @@ internal_initialize()
 #Endpoint to upload a pdf file
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    #check if the post request has the file part
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    
-    pdf_file = request.files['file']
-    #if user does not select file, browser also
-    #submit an empty part without filename
-    if pdf_file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    
-    #check if the file exists in the data directory
-    if os.path.exists(data_dir + pdf_file.filename):
-        #rename the existing file with a name <filename>-<YYYY-MM-DD_HH-MM-SS>.pdf and move it to the archive directory
-        timestamp_str = time.strftime("%Y-%m-%d_%H-%M-%S")
-        os.system(f"mv {data_dir + pdf_file.filename} {data_dir + 'archive/' + pdf_file.filename + '-' + timestamp_str}") 
+    try:
+        #check if the post request has the file part
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
         
-    #save the pdf file to the data directory
-    pdf_file.save(data_dir + pdf_file.filename)
+        pdf_file = request.files['file']
+        #get the company name from request params
+        uploaded_company_name = request.args.get('company_name')
 
-    #load the pdf file into the vectordb
-    documents = []
-    pdf_path = data_dir + pdf_file.filename
-    loader = PyPDFLoader(pdf_path)
-    documents.extend(loader.load())
-    vectordb = split_and_embed_documents(documents)
-    # vectordb.persist()
-    initialize_chain()
+        if not uploaded_company_name:
+            return jsonify({"error": "Company name is required"}), 400
+        
+        logger.info(f"Uploading pdf file for company: {uploaded_company_name} with pdf file {pdf_file.filename}")
+
+        #if user does not select file, browser also
+        #submit an empty part without filename
+        if pdf_file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+        
+        #check if the file exists in the data directory
+        if os.path.exists(data_dir + pdf_file.filename):
+            #rename the existing file with a name <filename>-<YYYY-MM-DD_HH-MM-SS>.pdf and move it to the archive directory
+            timestamp_str = time.strftime("%Y-%m-%d_%H-%M-%S")
+            os.system(f"mv {data_dir + pdf_file.filename} {data_dir + 'archive/' + pdf_file.filename + '-' + timestamp_str}") 
+            
+        #save the pdf file to the data directory
+        pdf_file.save(data_dir + pdf_file.filename)
+
+        #load the pdf file into the vectordb
+        documents = []
+        pdf_path = data_dir + pdf_file.filename
+        loader = PyPDFLoader(pdf_path)
+        documents.extend(loader.load())
+        vectordb = split_and_embed_documents(documents)
+        # vectordb.persist()
+        initialize_chain()
+
+        logger.info(f"Creating source entry for company: {uploaded_company_name} with pdf file {pdf_file.filename}")
+        create_source_entry(uploaded_company_name, pdf_file.filename, "active")
+    except Exception as e:
+        logger.info(f"Error in /upload endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
 
     return jsonify({"message": "PDF uploaded and processed successfully."})
 
@@ -343,7 +365,7 @@ def upload_file():
 def get_companies():
     companies = []
     for company,file,status in files_dictionary:
-        if status == "Processed":
+        if status == "Active":
             companies.append(company)
     logger.info(f"Companies: {companies}")
     return jsonify(companies)
@@ -498,7 +520,14 @@ def chat_endpoint():
 
 # Endpoint to handle chat queries
 @app.route('/generate_IA_report', methods=['GET'])
-def generate_investment_analysis_report(company):
+def generate_investment_analysis_report():
+
+    company = request.args.get('company')
+    if not company:
+        return jsonify({"error": "company is required"}), 400
+
+    logger.info(f"Company for IA analysis report: {company}")
+
     system_prompt = "You are an AI assistant helping with investment analysis. Provide concise and accurate responses based on the research reports."
 
     #create a structure for an investment analysis template with a placeholder

@@ -60,9 +60,24 @@ export class ChatService {
     this.messages.push(message);
   }
 
-  uploadFile(file: File): Observable<any> {
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    return this.httpClient.post(`${this.baseURL}/upload`, formData);
+  // uploadFile(file: File, uploadedCompanyName: String): Observable<any> {
+  //   const formData = new FormData();
+  //   formData.append('file', file, file.name);
+  //   // Add uploadedCompanyName as a query parameter
+  //   const params = new HttpParams().set('company_name', uploadedCompanyName.toString());
+
+  //   return this.httpClient.post(`${this.baseURL}/upload`, formData, { params });
+  // }
+
+  // New method to call the /generate_IA_report endpoint
+  generateIAReport(company:string): Observable<any> {
+    console.log ('company: '+company);
+    const params = new HttpParams().set('company', company);
+    return this.httpClient.get(`${this.baseURL}/generate_IA_report`, {params}).pipe(
+      catchError((error: any) => {
+      console.error('Error generating IA report:', error);
+      return throwError(error);
+      })
+    );
   }
 }

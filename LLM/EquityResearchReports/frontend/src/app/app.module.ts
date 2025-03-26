@@ -7,6 +7,7 @@ import { ChatComponent } from './chat/chat.component';
 import { AppComponent } from './app.component';
 import { Routes, RouterModule } from '@angular/router';
 import { RuntimeConfigService } from './runtime-config.service';
+import { SourcesComponent } from './sources/sources.component';
 
 export function initializeApp(runtimeConfigService: RuntimeConfigService) {
   return (): Promise<void> => runtimeConfigService.loadConfig().toPromise();
@@ -21,7 +22,8 @@ const routes: Routes = [
 @NgModule({
   declarations: [
     ChatComponent,
-    AppComponent
+    AppComponent,
+    SourcesComponent
   ],
   imports: [
     BrowserModule,

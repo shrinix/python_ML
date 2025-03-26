@@ -1,68 +1,112 @@
 <div class="chat-container" style="display: flex;">
-  <div class="flex-container">
-    <div class="commands-panel" style="width: 15%;">
-      <h3>Select Company</h3>
+  <!-- <div class="flex-container"> -->
+    <div class="commands-panel">
+      <br>
+      <h3>Select company</h3>
       <select [(ngModel)]="selectedCompany" (change)="selectCompany(selectedCompany)">
         <option *ngFor="let company of companies" [value]="company">{{ company }}</option>
       </select>
       <hr>
-      <h3>Ready-to-use Commands</h3>
+      <h3>Chat questions and commands</h3>
       <ul>
         <li *ngFor="let command of updatedCommands" (click)="sendCommand(command)">
           {{ command }}
         </li>
       </ul>
-    </div>
-    <div class="spinner-container" *ngIf="loading">
-      <div class="spinner"></div>
-    </div>
-    <div class="center-panel" style="width: 80%;; margin-right: 20px;">
-      <div class="input-container">
-        <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)" style="width: 72%;">
-        <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
+      <hr>
+      <!-- <div class="upload-section">
+        <h3>Upload new company PDF</h3>
+        <input type="text" [(ngModel)]="uploadedCompanyName" placeholder="Enter company name" (input)="clearUploadError()"
+          style="width: 70%;">
+        <input type="file" accept="application/pdf" #fileInput>
+        <br>
+        <button (click)="uploadPdf()">Submit</button>
+        <div *ngIf="uploadError" class="error-message">{{ uploadError }}</div>
       </div>
-      <div class="response-box" style="height: 83%; overflow-y: scroll;">
-        <div *ngFor="let message of messages">
-          <p *ngIf="!message.isHtml" [ngClass]="message.cssClass">
-            <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> {{message.content}}
-          </p>
-          <p *ngIf="message.isHtml" [ngClass]="message.cssClass">
-            <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> <span [innerHTML]="message.content"></span>
-          </p>
+      <hr> -->
+      <div class="metrics-section">
+        <h3>Metrics (RAGAS)</h3>
+        <table style="border-collapse: collapse; width: 90%;">
+          <tr>
+            <th style="border: 1px solid black; padding: 8px;">Metric</th>
+            <th style="border: 1px solid black; padding: 8px;">Value</th>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black; padding: 8px;">RAGAS Score</td>
+            <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_score }}</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black; padding: 8px;">Faithfullness</td>
+            <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_faithfullness }}</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid black; padding: 8px;">Relevancy</td>
+            <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_relevancy }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+      <!-- Tab Content -->
+    <div class="tab-content" style="width: 75%; height: 87.5%; margin: 20px;">
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button (click)="setTab('chat')" [class.active]="selectedTab === 'chat'">{{ tabNames.chat }}</button>
+        <button (click)="setTab('analytics')" [class.active]="selectedTab === 'analytics'">{{ tabNames.analytics}}</button>
+        <button (click)="setTab('sources')" [class.active]="selectedTab === 'sources'">{{ tabNames.sources}}</button>
+      </div>
+      <div class="tab-content-body" style="flex: 1; overflow-y: auto;">
+        <!-- Chat Tab -->
+        <div *ngIf="selectedTab === 'chat'">
+          <!-- <div class="spinner-container" *ngIf="loading">
+          <div class="spinner"></div>
+          </div> -->
+          <div class="center-panel">
+            <div class="input-container">
+              <input [(ngModel)]="question" placeholder="Ask a question..." (keyup.enter)="generateAnswer(question)"
+                style="width: 72%;">
+              <button class="chat-button" (click)="generateAnswer(question)">Ask</button>
+            </div>
+            <div class="response-box" style="height: 70%;overflow-y: scroll;">
+              <div *ngFor="let message of messages">
+                <p *ngIf="!message.isHtml" [ngClass]="message.cssClass">
+                  <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> {{message.content}}
+                </p>
+                <p *ngIf="message.isHtml" [ngClass]="message.cssClass">
+                  <strong>{{message.sequence}}. {{message.sender}} ({{message.timestamp}}):</strong> <span
+                    [innerHTML]="message.content"></span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Analytics Tab -->
+        <div *ngIf="selectedTab === 'analytics'" class="analytics-tab">
+          <h3>Analytics for {{ selectedCompany }}</h3>
+          <div class="analytics-content">
+          <button (click)="generateIAReport(selectedCompany)" class="generate-IA-report-button">Generate IA Report</button>
+          <hr>
+          <!-- Dynamically render the IA report -->
+          <div *ngIf="iaReport && hasKeys(iaReport)" class="ia-report">
+            <div *ngFor="let section of iaReport | keyvalue" class="ia-report-section">
+              <h4>{{ section.key }}</h4>
+              <p [innerHTML]="section.value"></p>
+            </div>
+          </div>
+          <!-- Show a message if no report is available -->
+          <div *ngIf="!iaReport || !hasKeys(iaReport)" class="no-report">
+            <p>No report available. Please generate a report.</p>
+          </div>
+        </div>
+        </div>
+        <!-- Sources Tab -->
+        <div *ngIf="selectedTab === 'sources'" class="sources-tab">
+          <h3>Sources Management</h3>
+          <app-sources
+            [selectedCompany]="selectedCompany"
+            (addCompanyEvent)="handleAddCompany($event)"
+            (deleteCompanyEvent)="handleDeleteCompany($event)">
+          </app-sources>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<div class="right-panel" style="width: 15%;">
-    <div class="upload-section">
-      <h3>Upload PDF for new Company</h3>
-      <input type="text" [(ngModel)]="uploadedCompanyName" placeholder="Enter company name" (input)="clearUploadError()" style="width: 70%;">
-      <input type="file" accept="application/pdf" #fileInput>
-      <br>
-      <br>
-      <button (click)="uploadPdf()">Submit</button>
-      <div *ngIf="uploadError" class="error-message">{{ uploadError }}</div>
-    </div>
-    <hr>
-    <div class="metrics-section">
-      <h3>Metrics (RAGAS)</h3>
-      <table style="border-collapse: collapse; width: 90%;">
-        <tr>
-          <th style="border: 1px solid black; padding: 8px;">Metric</th>
-          <th style="border: 1px solid black; padding: 8px;">Value</th>
-        </tr>
-        <tr>
-          <td style="border: 1px solid black; padding: 8px;">RAGAS Score</td>
-          <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_score }}</td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid black; padding: 8px;">Faithfullness</td>
-          <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_faithfullness }}</td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid black; padding: 8px;">Relevancy</td>
-          <td style="text-align: right; border: 1px solid black; padding: 8px;">{{ ragas_relevancy }}</td>
-        </tr>
-      </table>
-  </div>
-</div>

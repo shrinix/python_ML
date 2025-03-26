@@ -16,8 +16,10 @@ services:
       - PYTHONUNBUFFERED=1
     ports:
       - "5001:5001"
+      - "5003:5003"
     expose:
       - "5001"
+      - "5003"
     volumes:
       - ${HOME_DIR}/EquityResearchReports/pdf-data/:/app/pdfs/
     env_file:

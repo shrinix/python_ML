@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12.2-slim
 
 WORKDIR /app
 
@@ -11,6 +11,7 @@ ARG HOME_DIR
 # Set environment variables
 ENV HOME_DIR=${HOME_DIR}
 
+# RUN pip3 install --upgrade pip
 # Copy the requirements file and install dependencies
 COPY requirements-chat-service.txt .
 RUN pip3 install -r requirements-chat-service.txt
@@ -30,8 +31,11 @@ RUN chmod +x /app/entrypoint.sh
 # Copy one file from ../pdf-data to /app/pdf-data
 # COPY ${HOME_DIR}/pdf-data/3p-learning-2015-db.pdf /app/pdf-data/3p-learning-2015-db.pdf
 
-# Expose the port the app runs on
+# Port for chat service
 EXPOSE 5001
+
+# Port for source management service
+EXPOSE 5003 
 
 # Use the shell script as the entry point
 ENTRYPOINT ["/app/entrypoint.sh"]

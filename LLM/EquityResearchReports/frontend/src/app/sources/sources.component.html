@@ -1,0 +1,48 @@
+<div class="sources-tab">
+    <!-- <h3>Manage Sources for {{ selectedCompany }}</h3> -->
+    <div class="sources-content">
+      <!-- Add New Source -->
+      <div class="add-source-form">
+        <h4>Add New Source</h4>
+        <input type="text" [(ngModel)]="newSource.company_name" placeholder="Company Name" style="width: 40%;" (input)="clearUploadError()">
+        <label for="status-dropdown" style="margin-left: 10px;margin-right: 10px;">Status:</label>
+        <select id="status-dropdown" [(ngModel)]="newSource.status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="archived">Archived</option>
+        </select>
+        <br>
+        <input type="text" [(ngModel)]="newSource.pdf" placeholder="PDF Name" style="width: 40%;margin-right: 10px;">
+        <input type="file" accept="application/pdf" #fileInput (change)="newSource.pdf = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : ''">
+        <br>
+        <br>
+        <button (click)="uploadPdf()">Add Source</button>
+        <div *ngIf="uploadStatus" class="upload-status-message">{{ uploadStatus }}</div>
+      </div>
+      <hr>
+  
+      <!-- List of Sources -->
+      <h4>Existing Sources</h4>
+      <table style="border-collapse: collapse; width: 100%; border: 1px solid black;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid black; padding: 8px;">Company Name</th>
+            <th style="border: 1px solid black; padding: 8px;">PDF</th>
+            <th style="border: 1px solid black; padding: 8px;">Status</th>
+            <th style="border: 1px solid black; padding: 8px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let source of sources">
+            <td style="border: 1px solid black; padding: 8px;">{{ source.company_name }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ source.pdf }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ source.status }}</td>
+            <td style="border: 1px solid black; padding: 8px;">
+              <!-- <button (click)="editSource(source)">Edit</button> -->
+              <button (click)="deleteSource(source.id,source.company_name)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
