@@ -13,7 +13,7 @@ export class RuntimeConfigService {
   constructor(private http: HttpClient) {}
 
   loadConfig(): Observable<void> {
-    return this.http.get('../assets/runtime-config.json').pipe(
+    return this.http.get('assets/runtime-config.json').pipe(
       map((config: any) => {
         this.config = config;
       }),

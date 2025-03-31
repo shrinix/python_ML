@@ -81,6 +81,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
         this.companies = sources.map((source: any) => source.company_name);
         if (this.companies.length > 0) {
           this.selectedCompany = this.companies[0];
+          this.updateCommands();
         }
       },
       (error: any) => {

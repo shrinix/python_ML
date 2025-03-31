@@ -13,5 +13,5 @@ else
 fi
 
  # Start the server
-  exec node /app/server.js
+  exec node /app/server.js --replace-urls-executed=true
 fi

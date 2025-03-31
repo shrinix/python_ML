@@ -134,7 +134,6 @@ if __name__ == '__main__':
     # #Get all sources
     # get_source_entries()
 
-    active_entries = get_source_entries_by_status("active")
+    # active_entries = get_source_entries_by_status("active")
+    active_entries = get_active_source_entries()
     print(active_entries)
-
-
