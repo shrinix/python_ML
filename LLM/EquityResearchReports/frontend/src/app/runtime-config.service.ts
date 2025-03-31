@@ -13,16 +13,26 @@ export class RuntimeConfigService {
   constructor(private http: HttpClient) {}
 
   loadConfig(): Observable<void> {
-    return this.http.get('/assets/runtime-config.json').pipe(
+    return this.http.get('../assets/runtime-config.json').pipe(
       map((config: any) => {
         this.config = config;
       }),
       catchError(() => {
         console.log('Could not load runtime config, using environment variables');
-        this.config = { BASE_URL: environment.baseURL };
+        this.config = { 
+          BASE_URL: environment.baseURL,
+          SOURCES_URL: environment.sourcesURL 
+        };
         return of(void 0);
       })
     );
+  }
+
+  get configLoaded(): boolean {
+    return !!this.config;
+  }
+  get sourcesUrl(): string {
+    return this.config?.SOURCES_URL || '';
   }
 
   get baseUrl(): string {

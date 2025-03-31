@@ -12,15 +12,17 @@ import { RuntimeConfigService } from '../runtime-config.service';
 })
 export class SourcesService {
 
+    private sourcesURL: string;
     private baseURL: string;
 
     constructor(private httpClient: HttpClient, private configService: RuntimeConfigService) {
+      this.sourcesURL = configService.sourcesUrl;
       this.baseURL = configService.baseUrl;
-      //if baseURL is null or configService is not initialized, use environment variable
-      if (!this.baseURL) {
-        this.baseURL = environment.baseURL;
+      //if sourcesURL is null or configService is not initialized, use environment variable
+      if (!this.sourcesURL) {
+        this.sourcesURL = environment.sourcesURL;
       }
-      console.log('baseURL is set to ' + this.baseURL);
+      console.log('sourcesURL is set to ' + this.sourcesURL);
     }
 
     uploadFile(file: File, uploadedCompanyName: String): Observable<any> {
@@ -29,6 +31,25 @@ export class SourcesService {
         // Add uploadedCompanyName as a query parameter
         const params = new HttpParams().set('company_name', uploadedCompanyName.toString());
 
+        //TODO: Need to change this to use the sourcesURL but this will also require moving the backend functionality from chat seqrvice to sources service.
         return this.httpClient.post(`${this.baseURL}/upload`, formData, { params });
+    }
+
+    getActiveSources(): Observable<any> {
+      return this.httpClient.get(`${this.sourcesURL}/source/active`).pipe(
+          catchError((error: any) => {
+              console.error('Error fetching sources:', error);
+              return throwError(error);
+            })
+        );
+    }
+
+    getSources(): Observable<any> {
+        return this.httpClient.get(`${this.sourcesURL}/source`).pipe(
+            catchError((error: any) => {
+                console.error('Error fetching sources:', error);
+                return throwError(error);
+            })
+        );
     }
 }

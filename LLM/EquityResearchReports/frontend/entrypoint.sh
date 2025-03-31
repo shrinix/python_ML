@@ -3,12 +3,12 @@
 # Check if ENVIRONMENT variable is set, default to 'dev'
 ENVIRONMENT=${ENVIRONMENT:-dev}
 
-# Run the replace_base_url.sh script
-if [ -f /app/replace_base_url.sh ]; then
-  echo "Running replace_base_url.sh script from entrypoint.sh..."
-  /app/replace_base_url.sh
+# Run the replace_urls.sh script
+if [ -f /app/replace_urls.sh ]; then
+  echo "Running replace_urls.sh script from entrypoint.sh..."
+  /app/replace_urls.sh
 else
-  echo "replace_base_url.sh script not found. Exiting."
+  echo "replace_urls.sh script not found. Exiting."
   exit 1
 fi
 

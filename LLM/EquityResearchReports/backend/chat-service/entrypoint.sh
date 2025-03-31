@@ -22,6 +22,8 @@ $PYTHON_PATH --version
 
 ls -lia /app/ER_chat_service_v2.py
 
+chmod 666 /app/sources.db
+
 env
 
 # Run the Python applications in the background

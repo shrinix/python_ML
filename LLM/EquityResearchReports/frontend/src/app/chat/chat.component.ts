@@ -1,9 +1,11 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef,AfterViewInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from './chat.service';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
+import { SourcesComponent } from '../sources/sources.component';
+import { SourcesService } from '../sources/sources.service';
 
 export interface ChatMessage {
   sender: string;
@@ -19,7 +21,7 @@ export interface ChatMessage {
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss'],
 })
-export class ChatComponent implements OnInit {
+export class ChatComponent implements OnInit, AfterViewInit {
   // @ViewChild('fileInput') fileInput: ElementRef;
   topic: string = '';
   chat_response: string;
@@ -41,6 +43,7 @@ export class ChatComponent implements OnInit {
   companies: string[] = [];//['3P Learning', 'ABB', 'Apple Inc', 'CBS Corporation', 'Duke Energy', 'Imperial Oil Limited',
   //'Premier Foods', 'Sanofi', 'Schneider Electric', 'The Walt Disney Company', 'Virgin Money Holdings'];
   selectedCompany: string;
+  @ViewChild(SourcesComponent, { static: false }) sourcesComponent?: SourcesComponent; // Reference to the SourcesComponent
   updatedCommands: string[] = [];
   uploadedCompanyName: string = '';
   uploadError: string = '';
@@ -57,24 +60,46 @@ export class ChatComponent implements OnInit {
   iaReport: { [key: string]: string } = {}; // Property to store the parsed IA report
   iaReportText: string = ''; // Property to store the IA report text
 
-  constructor(private route: ActivatedRoute, private chatService: ChatService, private http: HttpClient, private router: Router) {
+  constructor(private route: ActivatedRoute, private chatService: ChatService, 
+    private http: HttpClient, private router: Router,private sourcesService: SourcesService) {
     //this.loadChatHistory();
   }
   ngOnInit(): void {
-
     console.log('Initializing ChatComponent...');
-
+    // Load companies when the component is initialized
+    this.loadCompanies();
     // Set the default tab
     this.setTab('chat'); // Explicitly set the default tab to 'chat'
-
-    this.getCompaniesList();
-    if (this.companies.length > 0) {
-      this.selectedCompany = this.companies[0];
-      this.updateCommands();
-    } else {
-      console.warn('No companies available.');
-    }
     this.updateCommands();
+  }
+
+  loadCompanies(): void {
+    this.sourcesService.getActiveSources().subscribe(
+      (data: any) => {
+        const sources = data;
+        sources.sort((a: any, b: any) => a.company_name.localeCompare(b.company_name));
+        this.companies = sources.map((source: any) => source.company_name);
+        if (this.companies.length > 0) {
+          this.selectedCompany = this.companies[0];
+        }
+      },
+      (error: any) => {
+        console.error('Error loading companies:', error);
+      }
+    );
+  }
+
+  ngAfterViewInit(): void {
+    // Trigger the getCompaniesEvent programmatically after the view is initialized
+    if (this.sourcesComponent) {
+      if (this.sourcesComponent) {
+        this.sourcesComponent.getCompanies();
+      } else {
+        console.warn('SourcesComponent is not initialized.');
+      }
+    } else {
+      console.warn('SourcesComponent is not initialized.');
+    }
   }
 
   setTab(tab: keyof typeof this.tabNames) {
@@ -207,6 +232,14 @@ export class ChatComponent implements OnInit {
     } else {
       console.log(`Company already exists: ${companyName}`);
     }
+  }
+
+  //Handle the companies list event from SourcesComponent
+  handleGetCompanies(companies: string[]): void {
+    console.log('Companies received:', companies);
+    this.companies = companies;
+    this.sortCompaniesList();
+    console.log('Sorted companies:', this.companies);
   }
 
   addCompany(company: string) {

@@ -70,7 +70,9 @@ services:
         - linux/arm64
     container_name: er-frontend-service
     environment:
-        BASE_URL: ${BASE_URL:-http://localhost:5001}
+      - BASE_URL=${BASE_URL:-http://localhost:5001}
+      - METRICS_SERVICE_URL=${METRICS_SERVICE_URL:-http://localhost:5002/generate_metrics}
+      - SOURCES_URL=${SOURCES_URL:-http://localhost:5003}
     ports:
       - "4200:4200"
     expose:

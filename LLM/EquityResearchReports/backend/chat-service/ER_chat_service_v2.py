@@ -313,6 +313,7 @@ def internal_initialize():
 internal_initialize()
 
 #Endpoint to upload a pdf file
+#TODO Move this to sourceq-management-service
 @app.route('/upload', methods=['POST'])
 def upload_file():
     try:
@@ -364,9 +365,11 @@ def upload_file():
 @app.route('/companies', methods=['GET'])
 def get_companies():
     companies = []
-    for company,file,status in files_dictionary:
-        if status == "Active":
-            companies.append(company)
+
+    active_entries = get_source_entries_by_status("active")
+    for company in active_entries:
+        companies.append(company.get('company_name'))
+
     logger.info(f"Companies: {companies}")
     return jsonify(companies)
 

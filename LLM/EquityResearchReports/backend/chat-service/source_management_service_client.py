@@ -70,7 +70,19 @@ def get_source_entries_by_status(status):
         print(f"Error: {response.status_code}, Response: {response.text}")
 
     return sources
+#get all active source entries
+def get_active_source_entries():
+    sources = []
+    active_url= url + '/active'
+    response = requests.get(active_url, headers=headers)
+    if response.status_code == 200 and response.headers.get('Content-Type') == 'application/json':
+        sources = response.json()
+        #filter sources by status
+        sources = [source for source in sources if source['status'] == 'active']
+    else:
+        print(f"Error: {response.status_code}, Response: {response.text}")
 
+    return sources
 # Update the source entry with the id 1
 def update_source_entry(id, company_name, pdf, status="inactive"):
     data = {

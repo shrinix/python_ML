@@ -71,6 +71,12 @@ def create_source():
 
     return source_schema.jsonify(new_source)
 
+@app.route('/source/active', methods=['GET'])
+def get_active_sources():
+    active_sources = Source.query.filter_by(status='active').all()
+    result = sources_schema.dump(active_sources)
+    return jsonify(result)
+
 @app.route('/source', methods=['GET'])
 def get_sources():
     all_sources = Source.query.all()

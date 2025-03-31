@@ -29,12 +29,12 @@ COPY --from=build /app/dist/frontend /app/dist/frontend
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/package.json /app/package.json
 COPY server.js /app/server.js
-COPY replace_base_url.sh /app/replace_base_url.sh
+COPY replace_urls.sh /app/replace_urls.sh
 # Copy the entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
 
 # Ensure the script has execute permissions
-RUN chmod +x /app/replace_base_url.sh
+RUN chmod +x /app/replace_urls.sh
 # Ensure the entrypoint script has execute permissions
 RUN chmod +x /app/entrypoint.sh
 

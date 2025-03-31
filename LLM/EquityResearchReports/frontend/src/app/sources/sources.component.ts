@@ -14,31 +14,51 @@ export class SourcesComponent implements OnInit {
   @ViewChild('fileInput') fileInput: ElementRef;
   @Input() selectedCompany: string = ''; // Input from ChatComponent
   @Output() addCompanyEvent = new EventEmitter<string>();
+  //Emit the list of companies to the chat component
+  @Output() getCompaniesEvent = new EventEmitter<string[]>();
   @Output() deleteCompanyEvent = new EventEmitter<string>();; // EventEmitter to notify ChatComponent
   sources: any[] = []; // List of sources
   newSource: any = { company_name: '', pdf: '', status: 'active' }; // New source object
   editedSource: any = null; // Source being edited
   uploadStatus: string = ''; // Status message for file upload
+  private companies: string[] = [];// Dynamically populated from the backend
 
   constructor(private route: ActivatedRoute, private sourcesService: SourcesService, private http: HttpClient, private router: Router) {
       //this.loadChatHistory();
   }
 
   ngOnInit(): void {
-    this.loadSources(); // Load sources when the component initializes
+    this.loadSources('all'); // Load sources when the component initializes
   }
 
   // Load sources from the backend
-  loadSources() {
-    // Replace with actual API call
-    fetch('http://localhost:5003/source')
-      .then((response) => response.json())
-      .then((data) => {
-        this.sources = data;
-        //sort the sources in alphabetical order of company name.
-        this.sources.sort();
-      })
-      .catch((error) => console.error('Error loading sources:', error));
+  loadSources(status: string) {
+    this.sourcesService.getSources().subscribe(
+        (data: any) => {
+          this.sources = data;
+          // Sort the sources in alphabetical order of company name.
+          this.sources.sort((a, b) => a.company_name.localeCompare(b.company_name));
+          console.log('Sources:', this.sources);
+          // Filter out the sources based on the provided status if the status is not 'all'
+          if (status !== 'all') {
+            this.sources = this.sources.filter(source => source.status === status);
+          }
+          // Extract the company names from the sources
+          let companies = this.sources.map((source) => source.company_name);
+          // Emit the event to get the companies
+            this.getCompaniesEvent.emit(companies.filter(company => 
+              this.sources.some(source => source.company_name === company && source.status === 'active')
+            ));
+        },
+        (error: any) => {
+          console.error('Error loading sources:', error);
+        }
+      );
+  }
+
+   // Method to emit the getCompaniesEvent
+   getCompanies(): void {
+    this.getCompaniesEvent.emit(this.companies);
   }
 
   clearUploadError(): void {
@@ -92,7 +112,7 @@ export class SourcesComponent implements OnInit {
       (response: any) => {
         console.log('response: ' + response.answer);
         this.uploadStatus = `File "${file.name}" uploaded successfully.`;
-        this.loadSources(); // Reload the sources list
+        this.loadSources('all'); // Reload the sources list
         // Reset the file input value to allow re-selection of the same file
         this.fileInput.nativeElement.value = '';
         this.newSource.pdf = null; // Clear the selected file
@@ -154,7 +174,7 @@ export class SourcesComponent implements OnInit {
     .then((response) => {
       if (response.ok) {
         console.log(`Source with ID ${sourceId} deleted successfully.`);
-        this.loadSources(); // Refresh the list of sources
+        this.loadSources('all'); // Refresh the list of sources
         console.log(`Emitting event to delete company: ${companyName}`);
         this.deleteCompanyEvent.emit(companyName); // Emit the company name as a string
     
