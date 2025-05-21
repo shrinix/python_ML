@@ -555,7 +555,7 @@ def generate_investment_analysis_report():
 
     #Some of these queries may need creation of agents to retrieve realtime information from the internet.
     queries = [
-            f" Evaluate the scalability, cash generation, and capital-light nature of {company}'s business model.?",
+            f"Evaluate the scalability, cash generation, and capital-light nature of {company}'s business model.?",
             f'What is the market position of the {company} in local and global markets?',
             f'Evaluate the growth strategy of {company} based on factors like expanding the client base, increasing market penetration, cross-selling products, and utilizing pricing levers',
             f'Assess the pricing power of {company} based on factors like customer base fragmentation, product quality, and barriers to entry',
