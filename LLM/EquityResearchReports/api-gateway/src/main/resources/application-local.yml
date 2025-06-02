@@ -1,0 +1,35 @@
+spring:
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        enabled: true
+        register: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+    gateway:
+      routes:
+        - id: stock-viewer-service
+          uri: http://127.0.0.1:6000
+          predicates:
+            - Path=/api/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:8081"
+              - "http://127.0.0.1:8081"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

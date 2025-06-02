@@ -24,7 +24,7 @@ from utils import (
 	reverse_lookup,compare_dataframes,validate_nstep_folding_of_data,validate_feature_scalers, validate_data_processing,
 	plot_attention_weights,scalers_dict,validate_scalers_entire_dataset,check_data,
 	validate_nstep_folding_of_data_with_dataframes, convert_dataframe_to_3d_array,
-	series_to_supervised,update_features_after_prediction_seq2seq
+	series_to_supervised,update_features_after_prediction_seq2seq,test_update_features_after_prediction_seq2seq_all
 )
 from keras.layers import Attention, Concatenate, Permute
 from keras.layers import RepeatVector, TimeDistributed
@@ -102,6 +102,136 @@ def create_seq2seq_model(optimizer_name, learning_rate, n_steps_in, n_steps_out,
 
 	return model
 
+# # def create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=50, dropout=0.2, l1_reg=0.01, l2_reg=0.01, use_teacher_forcing=False):
+# 	"""
+# 	Create a Seq2Seq model with Attention, with or without teacher forcing.
+
+# 	Parameters:
+# 		optimizer_name (str): Name of the optimizer ('adam', 'rmsprop').
+# 		learning_rate (float): Learning rate for the optimizer.
+# 		n_steps_in (int): Number of input timesteps.
+# 		n_steps_out (int): Number of output timesteps.
+# 		n_features (int): Number of features in the input data.
+# 		neurons (int): Number of LSTM units in each layer.
+# 		dropout (float): Dropout rate for regularization.
+# 		l1_reg (float): L1 regularization factor.
+# 		l2_reg (float): L2 regularization factor.
+# 		use_teacher_forcing (bool): Whether to use teacher forcing.
+
+# 	Returns:
+# 		model (keras.Model): Compiled Seq2Seq model with attention.
+# 	"""
+# 	# Encoder
+# 	encoder_inputs = Input(shape=(n_steps_in, n_features), name="encoder_inputs")
+# 	encoder_outputs, state_h, state_c = LSTM(
+# 		neurons,
+# 		activation='relu',
+# 		return_sequences=True,
+# 		return_state=True,
+# 		dropout=dropout,
+# 		kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+# 		name="encoder_lstm"
+# 	)(encoder_inputs)
+
+# 	encoder_states = [state_h, state_c]
+
+# 	if use_teacher_forcing:
+# 		# Decoder with teacher forcing
+# 		decoder_inputs = Input(shape=(n_steps_out, n_features), name="decoder_inputs")
+# 		decoder_lstm_outputs, _, _ = LSTM(
+# 			neurons,
+# 			activation='relu',
+# 			return_sequences=True,
+# 			return_state=True,
+# 			dropout=dropout,
+# 			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+# 			name="decoder_lstm"
+# 		)(decoder_inputs, initial_state=encoder_states)
+
+# 		# print("Shape of encoder_outputs:", encoder_outputs.shape)  # Expected: (batch_size, n_steps_in, neurons)
+# 		# print("Shape of decoder_lstm_outputs:", decoder_lstm_outputs.shape)  # Expected: (batch_size, n_steps_out, neurons)
+
+# 		# Custom attention mechanism
+# 		# Compute attention scores as the dot product between decoder outputs and encoder outputs
+# 		attention_scores = Dot(axes=[2, 2], name="attention_scores")([decoder_lstm_outputs, encoder_outputs])  # Shape: (batch_size, n_steps_out, n_steps_in)
+		
+# 		# print("Shape of attention_scores:", attention_scores.shape)  # Expected: (batch_size, n_steps_out, n_steps_in)
+
+# 		# Normalize the attention scores to get attention weights
+# 		attention_weights = Activation('softmax', name="attention_weights")(attention_scores)  # Shape: (batch_size, n_steps_out, n_steps_in)
+# 		# Compute the context vector as a weighted sum of encoder outputs
+# 		context_vector = Dot(axes=[2, 1], name="context_vector")([attention_weights, encoder_outputs])  # Shape: (batch_size, n_steps_out, neurons)
+
+# 		# Concatenate the context vector with the decoder outputs
+# 		decoder_combined_context = Concatenate(name="decoder_combined_context")([decoder_lstm_outputs, context_vector])
+
+# 		# Dense layer to produce the final output
+# 		decoder_dense = TimeDistributed(Dense(
+# 			1,  # Output layer (1 feature for the target column)
+# 			activation='linear',
+# 			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+# 			name="decoder_dense"
+# 		))(decoder_combined_context)
+
+# 		# Define the model with teacher forcing
+# 		model = Model([encoder_inputs, decoder_inputs], decoder_dense, name="seq2seq_model_with_attention_teacher_forcing")
+# 	else:
+# 		# Decoder without teacher forcing
+# 		decoder_inputs = RepeatVector(n_steps_out)(state_h)  # Repeat the encoder's final hidden state for n_steps_out timesteps
+# 		decoder_lstm_outputs = LSTM(
+# 			neurons,
+# 			activation='relu',
+# 			return_sequences=True,
+# 			dropout=dropout,
+# 			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+# 			name="decoder_lstm_no_teacher_forcing"
+# 		)(decoder_inputs, initial_state=encoder_states)
+
+# 		# Custom Attention mechanism
+# 		# print("Shape of encoder_outputs:", encoder_outputs.shape)  # Expected: (batch_size, n_steps_in, neurons)
+# 		# print("Shape of decoder_lstm_outputs:", decoder_lstm_outputs.shape)  # Expected: (batch_size, n_steps_out, neurons)
+
+# 		# Custom attention mechanism
+# 		# Compute attention scores as the dot product between decoder outputs and encoder outputs
+# 		attention_scores = Dot(axes=[2, 2], name="attention_scores")([decoder_lstm_outputs, encoder_outputs])  # Shape: (batch_size, n_steps_out, n_steps_in)
+		
+# 		# print("Shape of attention_scores:", attention_scores.shape)  # Expected: (batch_size, n_steps_out, n_steps_in)
+		
+# 		# Normalize the attention scores to get attention weights
+# 		attention_weights = Activation('softmax', name="attention_weights")(attention_scores)  # Shape: (batch_size, n_steps_out, n_steps_in)
+# 		# Compute the context vector as a weighted sum of encoder outputs
+# 		context_vector = Dot(axes=[2, 1], name="context_vector")([attention_weights, encoder_outputs])  # Shape: (batch_size, n_steps_out, neurons)
+
+# 		# Concatenate the context vector with the decoder outputs
+# 		decoder_combined_context = Concatenate(name="decoder_combined_context")([decoder_lstm_outputs, context_vector])
+
+# 		# Dense layer to produce the final output
+# 		decoder_dense = TimeDistributed(Dense(
+# 			1,  # Output layer (1 feature for the target column)
+# 			activation='linear',
+# 			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+# 			name="decoder_dense"
+# 		))(decoder_combined_context)
+
+# 		# Define the model without teacher forcing
+# 		model = Model(encoder_inputs, decoder_dense, name="seq2seq_model_with_attention_no_teacher_forcing")
+
+# 	# Select the optimizer
+# 	if optimizer_name == 'adam':
+# 		optimizer = Adam(learning_rate)
+# 	else:
+# 		optimizer = RMSprop(learning_rate)
+
+# 	# Compile the model
+# 	model.compile(optimizer=optimizer, loss='mse')
+
+# 	# Debugging: Print model summary
+# 	print("Model Summary:")
+# 	model.summary()
+
+# 	return model
+
+#function to create a regular LSTM sequence to sequence model with attention
 def create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=50, dropout=0.2, l1_reg=0.01, l2_reg=0.01, use_teacher_forcing=False):
 	"""
 	Create a Seq2Seq model with Attention, with or without teacher forcing.
@@ -109,8 +239,8 @@ def create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_i
 	Parameters:
 		optimizer_name (str): Name of the optimizer ('adam', 'rmsprop').
 		learning_rate (float): Learning rate for the optimizer.
-		n_steps_in (int): Number of input timesteps.
-		n_steps_out (int): Number of output timesteps.
+		n_steps_in (int): Number of input time steps.
+		n_steps_out (int): Number of output time steps (forecast horizon).
 		n_features (int): Number of features in the input data.
 		neurons (int): Number of LSTM units in each layer.
 		dropout (float): Dropout rate for regularization.
@@ -121,6 +251,14 @@ def create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_i
 	Returns:
 		model (keras.Model): Compiled Seq2Seq model with attention.
 	"""
+	# Set random seeds for reproducibility
+	seed = 42
+	np.random.seed(seed)
+	tf.random.set_seed(seed)
+
+	# Enable deterministic operations in TensorFlow
+	tf.config.experimental.enable_op_determinism()
+
 	# Encoder
 	encoder_inputs = Input(shape=(n_steps_in, n_features), name="encoder_inputs")
 	encoder_outputs, state_h, state_c = LSTM(
@@ -148,36 +286,38 @@ def create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_i
 			name="decoder_lstm"
 		)(decoder_inputs, initial_state=encoder_states)
 
-		# print("Shape of encoder_outputs:", encoder_outputs.shape)  # Expected: (batch_size, n_steps_in, neurons)
-		# print("Shape of decoder_lstm_outputs:", decoder_lstm_outputs.shape)  # Expected: (batch_size, n_steps_out, neurons)
+		print("Shape of encoder_outputs:", encoder_outputs.shape)  # Expected: (batch_size, n_steps_in, neurons)
+		print("Shape of decoder_lstm_outputs:", decoder_lstm_outputs.shape)  # Expected: (batch_size, n_steps_out, neurons)
 
 		# Custom attention mechanism
 		# Compute attention scores as the dot product between decoder outputs and encoder outputs
 		attention_scores = Dot(axes=[2, 2], name="attention_scores")([decoder_lstm_outputs, encoder_outputs])  # Shape: (batch_size, n_steps_out, n_steps_in)
 		
-		# print("Shape of attention_scores:", attention_scores.shape)  # Expected: (batch_size, n_steps_out, n_steps_in)
+		print("Shape of attention_scores:", attention_scores.shape)  # Expected: (batch_size, n_steps_out, n_steps_in)
 
 		# Normalize the attention scores to get attention weights
 		attention_weights = Activation('softmax', name="attention_weights")(attention_scores)  # Shape: (batch_size, n_steps_out, n_steps_in)
+		
 		# Compute the context vector as a weighted sum of encoder outputs
-		context_vector = Dot(axes=[2, 1], name="context_vector")([attention_weights, encoder_outputs])  # Shape: (batch_size, n_steps_out, neurons)
-
+		context_vector = Dot(axes=[2, 1], name="context_vector")([attention_weights, encoder_outputs])
+		# Shape: (batch_size, n_steps_out, neurons)
+		print("Shape of context_vector:", context_vector.shape)  # Expected: (batch_size, n_steps_out, neurons)
 		# Concatenate the context vector with the decoder outputs
 		decoder_combined_context = Concatenate(name="decoder_combined_context")([decoder_lstm_outputs, context_vector])
-
+		# Shape: (batch_size, n_steps_out, 2 * neurons)
+		print("Shape of decoder_combined_context:", decoder_combined_context.shape)  # Expected: (batch_size, n_steps_out, 2 * neurons)
 		# Dense layer to produce the final output
 		decoder_dense = TimeDistributed(Dense(
-			1,  # Output layer (1 feature for the target column)
-			activation='linear',
-			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
-			name="decoder_dense"
-		))(decoder_combined_context)
-
+			1,
+			activation='relu',
+			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg)
+		), name="decoder_dense")(decoder_combined_context)
 		# Define the model with teacher forcing
-		model = Model([encoder_inputs, decoder_inputs], decoder_dense, name="seq2seq_model_with_attention_teacher_forcing")
+		model = Model([encoder_inputs, decoder_inputs], decoder_dense, name="seq2seq_model_with_attention_and_teacher_forcing")
 	else:
 		# Decoder without teacher forcing
-		decoder_inputs = RepeatVector(n_steps_out)(state_h)  # Repeat the encoder's final hidden state for n_steps_out timesteps
+		decoder_inputs = RepeatVector(n_steps_out)(state_h)
+		# Repeat the encoder's final hidden state for n_steps_out timesteps
 		decoder_lstm_outputs = LSTM(
 			neurons,
 			activation='relu',
@@ -186,49 +326,42 @@ def create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_i
 			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
 			name="decoder_lstm_no_teacher_forcing"
 		)(decoder_inputs, initial_state=encoder_states)
-
 		# Custom Attention mechanism
-		# print("Shape of encoder_outputs:", encoder_outputs.shape)  # Expected: (batch_size, n_steps_in, neurons)
-		# print("Shape of decoder_lstm_outputs:", decoder_lstm_outputs.shape)  # Expected: (batch_size, n_steps_out, neurons)
-
+		print("Shape of encoder_outputs:", encoder_outputs.shape)  # Expected: (batch_size, n_steps_in, neurons)
+		print("Shape of decoder_lstm_outputs:", decoder_lstm_outputs.shape)  # Expected: (batch_size, n_steps_out, neurons)
 		# Custom attention mechanism
 		# Compute attention scores as the dot product between decoder outputs and encoder outputs
 		attention_scores = Dot(axes=[2, 2], name="attention_scores")([decoder_lstm_outputs, encoder_outputs])  # Shape: (batch_size, n_steps_out, n_steps_in)
-		
-		# print("Shape of attention_scores:", attention_scores.shape)  # Expected: (batch_size, n_steps_out, n_steps_in)
-		
+		print("Shape of attention_scores:", attention_scores.shape)  # Expected: (batch_size, n_steps_out, n_steps_in)
 		# Normalize the attention scores to get attention weights
 		attention_weights = Activation('softmax', name="attention_weights")(attention_scores)  # Shape: (batch_size, n_steps_out, n_steps_in)
 		# Compute the context vector as a weighted sum of encoder outputs
 		context_vector = Dot(axes=[2, 1], name="context_vector")([attention_weights, encoder_outputs])  # Shape: (batch_size, n_steps_out, neurons)
-
+		print("Shape of context_vector:", context_vector.shape)  # Expected: (batch_size, n_steps_out, neurons)
 		# Concatenate the context vector with the decoder outputs
 		decoder_combined_context = Concatenate(name="decoder_combined_context")([decoder_lstm_outputs, context_vector])
-
+		# Shape: (batch_size, n_steps_out, 2 * neurons)
+		print("Shape of decoder_combined_context:", decoder_combined_context.shape)  # Expected: (batch_size, n_steps_out, 2 * neurons)
 		# Dense layer to produce the final output
 		decoder_dense = TimeDistributed(Dense(
-			1,  # Output layer (1 feature for the target column)
-			activation='linear',
-			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
-			name="decoder_dense"
-		))(decoder_combined_context)
-
+			1,
+			activation='relu',
+			kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg)
+		), name="decoder_dense")(decoder_combined_context)
 		# Define the model without teacher forcing
-		model = Model(encoder_inputs, decoder_dense, name="seq2seq_model_with_attention_no_teacher_forcing")
-
+		model = Model(encoder_inputs, decoder_dense, name="seq2seq_model_with_attention_and_without_teacher_forcing")
 	# Select the optimizer
 	if optimizer_name == 'adam':
 		optimizer = Adam(learning_rate)
+	elif optimizer_name == 'adamw':
+		optimizer = AdamW(learning_rate)
 	else:
 		optimizer = RMSprop(learning_rate)
-
 	# Compile the model
 	model.compile(optimizer=optimizer, loss='mse')
-
 	# Debugging: Print model summary
 	print("Model Summary:")
 	model.summary()
-
 	return model
 
 def create_bidirectional_seq2seq_with_attention(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=50, dropout=0.2, l1_reg=0.01, l2_reg=0.01, use_teacher_forcing=False):
@@ -351,14 +484,22 @@ def create_model(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_featu
 	# model = create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=50, dropout=0.2, l1_reg=0.01, l2_reg=0.01, use_teacher_forcing=False)
 	# model_name = "seq2seq_model_with_attention_no_teacher_forcing"
 	if use_teacher_forcing:
-		model = create_seq2seq_model(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=neurons, dropout=dropout, l1_reg=l1_reg, l2_reg=l2_reg, use_teacher_forcing=True)
-		model_name = "seq2seq_model_with_teacher_forcing"
+		# model = create_seq2seq_model(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=neurons, dropout=dropout, l1_reg=l1_reg, l2_reg=l2_reg, use_teacher_forcing=True)
+		# model_name = "seq2seq_model_with_teacher_forcing"
+		# model = create_bidirectional_seq2seq_with_attention(
+		#     optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons, dropout, l1_reg, l2_reg, use_teacher_forcing=False)
+		# model_name = "bidirectional_seq2seq_model_with_attention_no_teacher_forcing"
+		model = create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=neurons, dropout=dropout, l1_reg=l1_reg, l2_reg=l2_reg, use_teacher_forcing=True)
+		model_name = "seq2seq_model_with_attention_and_teacher_forcing"
 	else:
 		# model = create_seq2seq_model(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=neurons, dropout=dropout, l1_reg=l1_reg, l2_reg=l2_reg, use_teacher_forcing=False)
 		# model_name = "seq2seq_model_no_teacher_forcing"
-		model = create_bidirectional_seq2seq_with_attention(
-		    optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons, dropout, l1_reg, l2_reg, use_teacher_forcing=False)
-		model_name = "bidirectional_seq2seq_model_with_attention_no_teacher_forcing"
+		# model = create_bidirectional_seq2seq_with_attention(
+		#     optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons, dropout, l1_reg, l2_reg, use_teacher_forcing=False)
+		# model_name = "bidirectional_seq2seq_model_with_attention_no_teacher_forcing"
+		model = create_seq2seq_model_with_attention(optimizer_name, learning_rate, n_steps_in, n_steps_out, n_features, neurons=neurons, dropout=dropout, l1_reg=l1_reg, l2_reg=l2_reg, use_teacher_forcing=False)
+		model_name = "seq2seq_model_with_attention_and_without_teacher_forcing"
+
 	print("Model Summary:")
 	print(model.summary())
 	return model, model_name
@@ -602,7 +743,7 @@ def train_seq2seq_with_timefolding_teacher_forcing(model, X_encoder_train, decod
 	return avg_rmse, avg_val_loss, rmse_scores, val_losses
 
 def train_seq2seq_without_timefolding(model_fn, X_encoder_train, decoder_input_train, y_decoder_train, feature_columns,
-									  validation_split=0.2, batch_size=32, epochs=100, patience=10, lr_scheduler=None, teacher_forcing=False, ax=None):
+									  validation_split=0.2, batch_size=32, epochs=100, patience=10, lr_scheduler=None, teacher_forcing=False):
 	"""
 	Train the Seq2Seq model without timefolding, using a fixed validation split.
 
@@ -715,16 +856,11 @@ def train_seq2seq_without_timefolding(model_fn, X_encoder_train, decoder_input_t
 
 	last_epoch = len(history.history['loss']) - 1
 
-	# Optionally, plot training and validation loss
-	if ax is not None:
-		ax.plot(history.history['loss'], label='Training Loss')
-		ax.plot(history.history['val_loss'], label='Validation Loss')
-
-	return val_rmse, avg_val_loss, last_epoch
+	return val_rmse, avg_val_loss, last_epoch, history
 
 #TODO remove plotting functions
 def train_seq2seq_with_timefolding_teacher_forcing(model_fn, X_encoder_train, decoder_input_train, y_decoder_train, feature_columns,
-											 n_splits, batch_size, epochs, patience, lr_scheduler, ax=None):
+											 n_splits, batch_size, epochs, patience, lr_scheduler):
 	"""
 	Train the Seq2Seq model using k-fold cross-validation with teacher forcing.
 
@@ -958,12 +1094,33 @@ def evaluate_seq2seq_model_on_test_data(model, target_scaler, X_encoder_test_3d,
 	attention_models = {
 		"seq2seq_model_with_attention",
 		"bidirectional_seq2seq_model_with_attention",
-		"bidirectional_seq2seq_model_with_attention_no_teacher_forcing"
+		"bidirectional_seq2seq_model_with_attention_no_teacher_forcing",
+		"seq2seq_model_with_attention_and_teacher_forcing"
 	}
 
-	inputs = {"encoder_inputs" if model_name in attention_models else "encoder_input": X_encoder_test_reshaped}
+	# inputs = {"encoder_inputs" if model_name in attention_models else "encoder_input": X_encoder_test_reshaped}
+	# if use_teacher_forcing:
+	# 	inputs["decoder_input"] = decoder_input_test_3d
+
+	# Get model input names
+	input_names = [inp.name.split(":")[0] for inp in model.inputs]
+	print("Model input names:", input_names)
+
+	# Determine encoder input key
+	encoder_key = "encoder_inputs" if any("encoder_inputs" in name for name in input_names) else "encoder_input"
+
+	inputs = {encoder_key: X_encoder_test_reshaped}
+
+	# Add decoder input if teacher forcing is used
 	if use_teacher_forcing:
-		inputs["decoder_input"] = decoder_input_test_3d
+		if any("decoder_inputs" in name for name in input_names):
+			decoder_key = "decoder_inputs"
+		elif any("decoder_input" in name for name in input_names):
+			decoder_key = "decoder_input"
+		else:
+			raise ValueError(f"Decoder input not found in model inputs: {input_names}")
+		inputs[decoder_key] = decoder_input_test_3d
+
 	predictions_scaled = model.predict(inputs)
 	print("Shape of predictions_scaled:", predictions_scaled.shape)
 	#print a few rows of predictions_scaled
@@ -1080,7 +1237,7 @@ def plot_predictions(model_name, X_encoder_test_df_unscaled, y_decoder_test_df_u
 		if col.startswith('Trend_Predicted_t'):
 			# Align indices of predictions_last_10 with test_last_10 before plotting
 			predictions_last_10_aligned = predictions_last_10[col].reindex(test_last_10.index)
-			ax.plot(test_last_10.index.to_numpy(), predictions_last_10_aligned, label=f'Predicted {col} (Last 10 Days)', linestyle='--', marker='o')
+			ax.plot(test_last_10.index.to_numpy(), predictions_last_10_aligned.to_numpy(), label=f'Predicted {col} (Last 10 Days)', linestyle='--', marker='o')
 
 	# Format the x-axis to display dates
 	ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
@@ -1117,107 +1274,170 @@ def plot_predictions(model_name, X_encoder_test_df_unscaled, y_decoder_test_df_u
 	ax.set_ylabel('Adj Close Price')
 	ax.legend()
 
-def predict_without_teacher_forcing_old(model, current_input, n_steps_in, n_steps_out, n_features):
-	"""
-	Predict without teacher forcing by disconnecting the encoder and decoder.
+def predict_without_teacher_forcing_v0(model, current_input, n_steps_in, n_steps_out, n_features):
+    """
+    Predict without teacher forcing by using the encoder's states and feeding back predictions.
 
-	Parameters:
-		model (keras.Model): Trained Seq2Seq model.
-		current_input (numpy.ndarray): Encoder input data for testing (3D array).
-		n_steps_out (int): Number of output timesteps.
-		n_features (int): Number of features in the input data.
+    Parameters:
+        model (keras.Model): Trained Seq2Seq model.
+        current_input (numpy.ndarray): Encoder input data for testing (shape: [1, n_steps_in, n_features]).
+        n_steps_in (int): Number of input timesteps.
+        n_steps_out (int): Number of output timesteps.
+        n_features (int): Number of features in the input data.
 
-	Returns:
-		numpy.ndarray: Forecasted values for the next n_steps_out timesteps.
-	"""
-	# Ensure current_input has the correct shape
-	assert current_input.shape == (1, n_steps_in, n_features), \
-		f"Expected shape (1, n_steps_in, {n_features}), but got {current_input.shape}"
+    Returns:
+        numpy.ndarray: Forecasted values for the next n_steps_out timesteps.
+    """
+    from keras.models import Model
+    from keras.layers import Input
 
-	# Get the encoder's output states
-	encoder_model = Model(inputs=model.input[0], outputs=model.get_layer("encoder_lstm").output[1:])
-	state_h, state_c = encoder_model.predict(current_input)
+    # Ensure input shape is correct
+    assert current_input.shape == (1, n_steps_in, n_features), \
+        f"Expected shape (1, n_steps_in, {n_features}), but got {current_input.shape}"
 
-	# Initialize the decoder input with zeros
-	decoder_input = np.zeros((1, n_steps_out, n_features))  # Shape: (batch_size, n_steps_out, n_features)
+    # Get encoder states
+    encoder_lstm_layer = model.get_layer("encoder_lstm")
+    encoder_model = Model(inputs=model.input[0], outputs=encoder_lstm_layer.output[1:])
+    state_h, state_c = encoder_model.predict(current_input)
 
-	predictions = []
+    # Try to get the correct decoder LSTM layer (handle both possible names)
+    try:
+        decoder_lstm = model.get_layer("decoder_lstm")
+    except ValueError:
+        decoder_lstm = model.get_layer("decoder_lstm_no_teacher_forcing")
+    decoder_dense = model.get_layer("decoder_dense")
 
-	for _ in range(n_steps_out):
-		# Get the decoder's output
-		decoder_model = Model(
-			inputs=[model.input[1], model.get_layer("decoder_lstm").input[1:]],
-			outputs=model.get_layer("decoder_dense").output
-		)
+    # Check units
+    if decoder_lstm.units is None:
+        raise ValueError("decoder_lstm.units is None. Check the layer name and model structure.")
 
-		# Ensure the input shape matches the expected shape by padding or reshaping
-		decoder_input_padded = np.zeros((decoder_input.shape[0], 2, decoder_input.shape[2]))
-		decoder_input_padded[:, :1, :] = decoder_input[:, :1, :]  # Copy the first timestep
-		output = decoder_model.predict([decoder_input_padded, state_h, state_c])
+    # Build the inference decoder model for one step
+    decoder_input_layer = Input(shape=(1, n_features))
+    decoder_state_input_h = Input(shape=(decoder_lstm.units,))
+    decoder_state_input_c = Input(shape=(decoder_lstm.units,))
+    decoder_outputs, state_h_out, state_c_out = decoder_lstm(
+        decoder_input_layer, initial_state=[decoder_state_input_h, decoder_state_input_c]
+    )
+    decoder_outputs = decoder_dense(decoder_outputs)
+    decoder_model = Model(
+        [decoder_input_layer, decoder_state_input_h, decoder_state_input_c],
+        [decoder_outputs, state_h_out, state_c_out]
+    )
 
-		# Append the prediction
-		predictions.append(output[0, 0, 0])
+    # Prepare the decoder input (start with last known features, except target)
+    decoder_input = np.zeros((1, 1, n_features))
+    decoder_input[0, 0, :-1] = current_input[0, -1, :-1]
 
-		# Update the decoder input with the current prediction
-		decoder_input[:, 0, -1] = output[0, 0, 0]  # Use the predicted value as the next input
+    predictions = []
+    h, c = state_h, state_c
+    for t in range(n_steps_out):
+        output, h, c = decoder_model.predict([decoder_input, h, c])
+        predictions.append(output[0, 0, 0])
+        # Update decoder_input for next timestep (autoregressive)
+        decoder_input[0, 0, -1] = output[0, 0, 0]  # Only update the target feature
 
-	return np.array(predictions)
+    return np.array(predictions)
 
 def predict_without_teacher_forcing(model, current_input, n_steps_in, n_steps_out, n_features):
-	"""
-	Predict without teacher forcing by disconnecting the encoder and decoder.
+    """
+    Predict without teacher forcing for both vanilla and attention-based seq2seq models.
 
-	Parameters:
-		model (keras.Model): Trained Seq2Seq model.
-		current_input (numpy.ndarray): Encoder input data for testing (3D array).
-		n_steps_in (int): Number of input timesteps.
-		n_steps_out (int): Number of output timesteps.
-		n_features (int): Number of features in the input data.
+    Parameters:
+        model (keras.Model): Trained Seq2Seq model.
+        current_input (numpy.ndarray): Encoder input data for testing (shape: [1, n_steps_in, n_features]).
+        n_steps_in (int): Number of input timesteps.
+        n_steps_out (int): Number of output timesteps.
+        n_features (int): Number of features in the input data.
 
-	Returns:
-		numpy.ndarray: Forecasted values for the next n_steps_out timesteps.
-	"""
+    Returns:
+        numpy.ndarray: Forecasted values for the next n_steps_out timesteps.
+    """
+    from keras.models import Model
+    from keras.layers import Input, Concatenate, Dot, Activation, TimeDistributed, Dense
 
-	print("Shape of current_input:", current_input.shape)  # Expected: (1, n_steps_in, n_features)
-	# Ensure current_input has the correct shape
-	assert current_input.shape == (1, n_steps_in, n_features), \
-		f"Expected shape (1, n_steps_in, {n_features}), but got {current_input.shape}"
+    # Ensure input shape is correct
+    assert current_input.shape == (1, n_steps_in, n_features), \
+        f"Expected shape (1, n_steps_in, {n_features}), but got {current_input.shape}"
 
-	# Get the encoder's output states
-	encoder_model = Model(inputs=model.input[0], outputs=model.get_layer("encoder_lstm").output[1:])
-	state_h, state_c = encoder_model.predict(current_input)
+    # Detect if model uses attention by checking input names
+    input_names = [inp.name.split(":")[0] for inp in model.inputs]
+    uses_attention = any("encoder_outputs" in name or "encoder_inputs" in name for name in input_names)
 
-	# Initialize the decoder input with zeros
-	decoder_input = np.zeros((1, n_steps_out, n_features))  # Shape: (batch_size, n_steps_out, n_features)
+    # Get encoder states and outputs
+    encoder_lstm_layer = model.get_layer("encoder_lstm")
+    if uses_attention:
+        # Attention model: encoder outputs sequences
+        encoder_model = Model(inputs=model.input[0], outputs=[encoder_lstm_layer.output[0], encoder_lstm_layer.output[1], encoder_lstm_layer.output[2]])
+        encoder_outputs, state_h, state_c = encoder_model.predict(current_input)
+    else:
+        # Vanilla model: encoder outputs last state only
+        encoder_model = Model(inputs=model.input[0], outputs=encoder_lstm_layer.output[1:])
+        state_h, state_c = encoder_model.predict(current_input)
+        encoder_outputs = None
 
-	predictions = []
+    # Try to get the correct decoder LSTM layer (handle both possible names)
+    try:
+        decoder_lstm = model.get_layer("decoder_lstm")
+    except ValueError:
+        decoder_lstm = model.get_layer("decoder_lstm_no_teacher_forcing")
 
-	for t in range(n_steps_out):
-		# Create a decoder model for single-timestep predictions
-		decoder_model = Model(
-			inputs=[model.input[1], model.get_layer("decoder_lstm").input[1:]],
-			outputs=[
-				model.get_layer("decoder_dense").output,  # Prediction output
-				model.get_layer("decoder_lstm").output[1],  # Hidden state (state_h)
-				model.get_layer("decoder_lstm").output[2]   # Cell state (state_c)
-			]
-		)
+    # Get the Dense/TimeDistributed layer
+    try:
+        decoder_dense = model.get_layer("decoder_dense")
+    except ValueError:
+        # For TimeDistributed(Dense(...), name="decoder_dense")
+        decoder_dense = [l for l in model.layers if l.name == "decoder_dense"][0]
 
-		# Use only the relevant timestep of the decoder input for prediction
-		decoder_input_padded = decoder_input[:, t:t+1, :]  # Shape: (1, 1, n_features)
+    # Build the inference decoder model
+    decoder_input_layer = Input(shape=(1, n_features), name="decoder_input_infer")
+    decoder_state_input_h = Input(shape=(decoder_lstm.units,), name="decoder_h_infer")
+    decoder_state_input_c = Input(shape=(decoder_lstm.units,), name="decoder_c_infer")
 
-		# Predict the next timestep
-		output, state_h, state_c = decoder_model.predict([decoder_input_padded, state_h, state_c])
+    if uses_attention:
+        # Attention inference: need encoder_outputs as input
+        encoder_outputs_input = Input(shape=(n_steps_in, decoder_lstm.units), name="encoder_outputs_infer")
+        # Decoder LSTM
+        decoder_outputs, state_h_out, state_c_out = decoder_lstm(
+            decoder_input_layer, initial_state=[decoder_state_input_h, decoder_state_input_c]
+        )
+        # Attention mechanism
+        attention_scores = Dot(axes=[2, 2], name="attention_scores_infer")([decoder_outputs, encoder_outputs_input])
+        attention_weights = Activation('softmax', name="attention_weights_infer")(attention_scores)
+        context_vector = Dot(axes=[2, 1], name="context_vector_infer")([attention_weights, encoder_outputs_input])
+        decoder_combined_context = Concatenate(name="decoder_combined_context_infer")([decoder_outputs, context_vector])
+        # Final output
+        decoder_outputs_final = decoder_dense(decoder_combined_context)
+        decoder_model = Model(
+            [decoder_input_layer, decoder_state_input_h, decoder_state_input_c, encoder_outputs_input],
+            [decoder_outputs_final, state_h_out, state_c_out]
+        )
+    else:
+        # Vanilla inference
+        decoder_outputs, state_h_out, state_c_out = decoder_lstm(
+            decoder_input_layer, initial_state=[decoder_state_input_h, decoder_state_input_c]
+        )
+        decoder_outputs_final = decoder_dense(decoder_outputs)
+        decoder_model = Model(
+            [decoder_input_layer, decoder_state_input_h, decoder_state_input_c],
+            [decoder_outputs_final, state_h_out, state_c_out]
+        )
 
-		# Append the prediction
-		predictions.append(output[0, 0, 0])
+    # Prepare the decoder input (start with last known features, except target)
+    decoder_input = np.zeros((1, 1, n_features))
+    decoder_input[0, 0, :-1] = current_input[0, -1, :-1]
 
-		# Update the decoder input with the current prediction
-		if t + 1 < n_steps_out:
-			decoder_input[:, t + 1, -1] = output[0, 0, 0]  # Use the predicted value as the next input
+    predictions = []
+    h, c = state_h, state_c
+    for t in range(n_steps_out):
+        if uses_attention:
+            output, h, c = decoder_model.predict([decoder_input, h, c, encoder_outputs])
+        else:
+            output, h, c = decoder_model.predict([decoder_input, h, c])
+        predictions.append(output[0, 0, 0])
+        # Update decoder_input for next timestep (autoregressive)
+        decoder_input[0, 0, -1] = output[0, 0, 0]  # Only update the target feature
 
-	return np.array(predictions)
-
+    return np.array(predictions)
 def forecast_next_n_days(model, target_scaler, X_encoder_test_3d, y_encoder_test_3d, n_steps_in, n_steps_out, n_features, n_days, ax):
 	"""
 	Forecast the next n_days using a trained Seq2Seq model without using ground truth.
@@ -1320,6 +1540,7 @@ def forecast_next_n_days(model, target_scaler, X_encoder_test_3d, y_encoder_test
 
 		step += 1
 		#add predicted value to the current_input_df for the next iteration
+		current_input_df_inc_cp = current_input_df_inc.copy()  
 		if step>0:
 			current_input_df_inc['Predicted'] = predicted_unscaled[0]
 
@@ -1327,7 +1548,7 @@ def forecast_next_n_days(model, target_scaler, X_encoder_test_3d, y_encoder_test
 
 	# Plot the predictions after the loop
 	if len(predictions) == len(days):
-		ax.plot(days, predictions, marker='o', label='Predicted')
+		ax.plot(days.to_numpy(), predictions, marker='o', label='Predicted')
 		# Add annotations for each predicted value
 		for i, value in enumerate(predictions):
 			ax.text(days[i], value, f'{value:.2f}', fontsize=8, color='blue', ha='center', va='bottom')
@@ -1346,32 +1567,38 @@ def forecast_next_n_days(model, target_scaler, X_encoder_test_3d, y_encoder_test
 	current_input_df = current_input_df[['Step', 'Date', 'Previous Adj Close','Predicted'] + [col for col in current_input_df.columns if col not in ['Step', 'Date', 'Predicted', 'Previous Adj Close']]]
 	# current_input_df.set_index('Date', inplace=True)
 	#save the current_input_df to a csv file
+	#convert all values to 2 decimal places
+	current_input_df = current_input_df.round(2)
 	current_input_df.to_csv(f'{output_files_folder}/seq2seq_current_input_df.csv', index=False)
 
 	#save x_encoder_test_3d_unscaled to a csv file
 	X_encoder_test_3d_unscaled_df = pd.DataFrame(X_encoder_test_3d_unscaled.reshape(-1, n_features), columns=column_names)
+	X_encoder_test_3d_unscaled_df = X_encoder_test_3d_unscaled_df.round(2)
 	X_encoder_test_3d_unscaled_df.to_csv(f'{output_files_folder}/seq2seq_X_encoder_test_3d_unscaled_df.csv', index=False)
 
 	#save y_decoder_test_3d_unscaled to a csv file
 	y_decoder_test_3d_unscaled_df = pd.DataFrame(y_decoder_test_3d_unscaled.reshape(-1, 1), columns=['Tgt'])
+	y_decoder_test_3d_unscaled_df = y_decoder_test_3d_unscaled_df.round(2)
 	y_decoder_test_3d_unscaled_df.to_csv(f'{output_files_folder}/seq2seq_y_decoder_test_3d_unscaled_df.csv', index=False)
 	return predictions
 
-def save_model_and_results(training_params_df, plt, model, output_files_folder):
+def save_model_and_results(training_params_df, plt, model, output_files_folder, file_prefix):
 
 	#do not look for yesterday's models.
 	look_for_yesterday=False
-	file_prefix = 'seq2seq_model'
 	version,_ = get_max_version(output_files_folder,file_prefix,look_for_yesterday)
 	version += 1 #increment the version
 
+	from datetime import datetime
+	current_date = datetime.now().strftime('%Y-%m-%d')
 	model_path = f'{output_files_folder}/seq2seq_model_{current_date}_v{version}.keras'
 	training_params_path = f'{output_files_folder}/seq2seq_model_{current_date}_training_params_v{version}.csv'
 
 	#save the training parameters to a csv file
 	training_params_df.to_csv(training_params_path)
 
-	model.save(model_path)
+	print("Saving model to:", model_path)
+	model.export(model_path)
 	print("Model saved to disk as: ", model_path)
 
 	plot_path = f'{output_files_folder}/{file_prefix}_plot_training_{current_date}_v{version}.pdf'
@@ -1386,6 +1613,7 @@ if __name__ == '__main__':
 	pd.set_option('display.max_colwidth', 40)   # Set the maximum column width
 	pd.set_option('display.colheader_justify', 'left')  # Justify column headers to the left
 	pd.set_option('display.float_format', '{:.2f}'.format)  # Set float format
+	file_prefix = 'seq2seq_model'
 
 	#create a plot with multiple sections
 	fig = plt.figure(figsize=(14, 12))  # width, height
@@ -1553,14 +1781,13 @@ if __name__ == '__main__':
 	num_layers = 2
 	
 	batch_size = 4
-	epochs = 100
+	epochs = 10
 	#add early stopping
 	patience = 200 #epochs
 	early_stopping = EarlyStopping(monitor='val_loss', patience=patience, restore_best_weights=True)
 	 #dynamically reduce learning rate
 	lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
 	training_start_time= datetime.now()
-	# last_epoch = train_lstm_model(model, X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, batch_size, epochs, early_stopping, ax[0])
 	# last_epoch = train_seq2seq_model_with_teacher_forcing(model, X_encoder_train, decoder_input_train, y_decoder_train, X_encoder_test, decoder_input_test, y_decoder_test, 
 	#                                  batch_size, epochs, early_stopping, ax[0])
 
@@ -1596,13 +1823,20 @@ if __name__ == '__main__':
 	validation_split=0.2
 	
 	teacher_forcing = True
-	avg_rmse, avg_val_loss, last_epoch = (
+	avg_rmse, avg_val_loss, last_epoch, history = (
 		train_seq2seq_without_timefolding(
 			model, X_encoder_train_3d, decoder_input_train_3d, y_decoder_train_3d,
 			feature_columns, validation_split=validation_split, batch_size=batch_size,
-			epochs=epochs, patience=patience, lr_scheduler=lr_scheduler, teacher_forcing=teacher_forcing, ax=ax[1]
+			epochs=epochs, patience=patience, lr_scheduler=lr_scheduler, teacher_forcing=teacher_forcing
 		)
 	)
+
+	ax[1].plot(history.history['loss'], label='Training Loss')
+	ax[1].plot(history.history['val_loss'], label='Validation Loss')
+	ax[1].legend()
+	ax[1].set_title('Training and Validation Loss')
+	ax[1].set_xlabel('Epoch')
+	ax[1].set_ylabel('Loss')
 	
 	training_end_time= datetime.now()
 	print("Last epoch: ", last_epoch)
@@ -1670,7 +1904,7 @@ if __name__ == '__main__':
 	y_decoder_test_df_unscaled = pd.DataFrame(y_decoder_test_array_unscaled, columns=target_columns)
 
 	# Pass the DataFrame to the plot_predictions function
-	# plot_predictions(model_name, X_encoder_test_df_unscaled, y_decoder_test_df_unscaled, predictions_with_X_test_df, ax[0])
+	plot_predictions(model_name, X_encoder_test_df_unscaled, y_decoder_test_df_unscaled, predictions_with_X_test_df, ax[0])
 	duration = training_end_time - training_start_time
 	#save training parameters to a dataframe
 	training_params = {'model_name': model_name,'neurons': neurons, 'n_features': n_features, 'dropout': dropout, 'optimizer': optimizer_name, 
@@ -1686,8 +1920,11 @@ if __name__ == '__main__':
 	#save the plot to a pdf
 	current_date = datetime.now().strftime('%Y-%m-%d')
 	
-	save_model_and_results(training_params_df, plt, model, output_files_folder)
-	#------
+	# test_update_features_after_prediction_seq2seq_all(
+	# 	X_encoder_test_df_unscaled, y_decoder_test_df_unscaled, feature_columns_without_date_and_step,
+	#     n_steps_in, n_steps_out
+	# )
+	# input("Press Enter to continue...")
 
 	# Forecast the next 10 days
 	n_days = 10
@@ -1707,6 +1944,8 @@ if __name__ == '__main__':
 	print("Predictions for the next 10 days:", predictions)
 
 	plt.tight_layout()
+	save_model_and_results(training_params_df, plt, model, output_files_folder,file_prefix)
+
 	plt.show()
 
 #create a method to use sqllite to persist the model and training parameters for analytics

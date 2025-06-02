@@ -281,12 +281,12 @@ def get_ticker_data(tickers, timeframes_df, source_files_folder, local_repositor
 				data.to_csv(filename)
 				continue
 
-			# Step 3: Check the local repository (TXT file)
-			data = check_local_repository(ticker, start_date, end_date, local_repository, source_files_folder, num_business_days)
-			if data is not None and not data.empty:
-				print("Data loaded from local TXT datastore.")
-				data.to_csv(filename)
-				continue
+			# # Step 3: Check the local repository (TXT file)
+			# data = check_local_repository(ticker, start_date, end_date, local_repository, source_files_folder, num_business_days)
+			# if data is not None and not data.empty:
+			# 	print("Data loaded from local TXT datastore.")
+			# 	data.to_csv(filename)
+			# 	continue
 
 			# Step 4: Fetch data from Yahoo Finance API
 			data = fetch_data_from_yahoo(ticker, start_date, end_date, filename)
@@ -2359,6 +2359,66 @@ def update_features_after_prediction_seq2seq(
 		n_steps_in=n_steps_in, return_shape='3d'
 	)
 
+def test_update_features_after_prediction_seq2seq(
+	X_test, y_test, column_names, n_steps_in, step=0, predicted_value=None
+):
+	"""
+	Test the update_features_after_prediction_seq2seq function using a sample from X_test and y_test.
+
+	Parameters:
+		X_test (np.ndarray): Test encoder input data, shape (samples, n_steps_in, n_features)
+		y_test (np.ndarray): Test target data, shape (samples, n_steps_out, 1) or (samples, n_steps_out)
+		column_names (list): List of feature column names (order must match X_test last dimension)
+		n_steps_in (int): Number of input timesteps
+		step (int): Step index for rolling window (default 0)
+		predicted_value (float or None): If None, use the first y_test value as the prediction
+
+	Returns:
+		np.ndarray: The updated features (3D array)
+	"""
+	# Select the first test sample
+	idx = 0
+	last_row_unscaled = X_test[idx:idx+1]  # shape (1, n_steps_in, n_features)
+	previous_adj_close = last_row_unscaled[0, -1, column_names.index('Adj Close')] \
+		if 'Adj Close' in column_names else last_row_unscaled[0, -1, -1]
+
+	# Use the first y_test value as the predicted value if not provided
+	if predicted_value is None:
+		if y_test.ndim == 3:
+			predicted_value = y_test[idx, 0, 0]
+		elif y_test.ndim == 2:
+			predicted_value = y_test[idx, 0]
+		else:
+			predicted_value = y_test[idx]
+
+	# Simulate predicted_unscaled as a list of previous predictions (here, just the first value)
+	predicted_unscaled = [predicted_value]
+
+	# For rolling windows, y_test_unscaled should be a 1D array of true values
+	if y_test.ndim == 3:
+		y_test_unscaled = y_test[:, 0, 0]
+	elif y_test.ndim == 2:
+		y_test_unscaled = y_test[:, 0]
+	else:
+		y_test_unscaled = y_test
+
+	# Call the update function
+	updated_features = update_features_after_prediction_seq2seq(
+		predicted_value=predicted_value,
+		last_row_unscaled=last_row_unscaled,
+		n_steps_in=n_steps_in,
+		previous_adj_close=previous_adj_close,
+		step=step,
+		X_test_unscaled=X_test,
+		y_test_unscaled=y_test_unscaled,
+		predicted_unscaled=predicted_unscaled,
+		column_names=column_names
+	)
+
+	print("Updated features (shape):", updated_features.shape)
+	print("Updated features (values):", updated_features)
+	return updated_features
+	
 def validate_data_processing(X_train, X_test, y_train, y_test, feature_columns, target_column):
 	"""
 	Validate the integrity of processed data.
@@ -2407,6 +2467,76 @@ def validate_data_processing(X_train, X_test, y_train, y_test, feature_columns, 
 		print("Target column shape is valid.")
 
 	print("--- Data Processing Validation Complete ---\n")
+
+def test_update_features_after_prediction_seq2seq_all(
+	X_test, y_test, column_names, n_steps_in, step=0, verbose=True
+):
+	"""
+	Test update_features_after_prediction_seq2seq for all samples in X_test/y_test.
+	A row passes if the predicted value equals the corresponding Tgt value in y_test.
+
+	Returns:
+		int: Number of rows tested
+		int: Number of rows passed
+		float: Pass rate (fraction)
+	"""
+	updated_features_list = []
+	n_samples = X_test.shape[0]
+	n_passed = 0
+
+	# Prepare y_test_unscaled for rolling windows
+	if isinstance(y_test, pd.DataFrame):
+		y_test = np.asarray(y_test)
+
+	if y_test.ndim == 3:
+		y_test_unscaled = y_test[:, 0, 0]
+	elif y_test.ndim == 2:
+		y_test_unscaled = y_test[:, 0]
+	else:
+		y_test_unscaled = y_test
+
+	for idx in range(n_samples):
+		last_row_unscaled = X_test[idx:idx+1]  # shape (1, n_steps_in, n_features)
+		# Use the first value in y_test for this sample as the predicted value
+		if y_test.ndim == 3:
+			predicted_value = y_test[idx, 0, 0]
+		elif y_test.ndim == 2:
+			predicted_value = y_test[idx, 0]
+		else:
+			predicted_value = y_test[idx]
+		predicted_unscaled = [predicted_value]
+
+		previous_adj_close = last_row_unscaled[0, -1, column_names.index('Adj Close')] \
+			if 'Adj Close' in column_names else last_row_unscaled[0, -1, -1]
+
+		updated_features = update_features_after_prediction_seq2seq(
+			predicted_value=predicted_value,
+			last_row_unscaled=last_row_unscaled,
+			n_steps_in=n_steps_in,
+			previous_adj_close=previous_adj_close,
+			step=step,
+			X_test_unscaled=X_test,
+			y_test_unscaled=y_test_unscaled,
+			predicted_unscaled=predicted_unscaled,
+			column_names=column_names
+		)
+		updated_features_list.append(updated_features)
+
+		# Check if predicted_value matches the corresponding Tgt value in y_test
+		tgt_value = predicted_value  # By construction, this is the same as y_test[idx, 0] or y_test[idx, 0, 0]
+		if y_test.ndim == 3:
+			actual_tgt = y_test[idx, 0, 0]
+		elif y_test.ndim == 2:
+			actual_tgt = y_test[idx, 0]
+		else:
+			actual_tgt = y_test[idx]
+		if np.isclose(predicted_value, actual_tgt, atol=1e-6):
+			n_passed += 1
+		if verbose:
+			print(f"Sample {idx}: predicted={predicted_value}, actual={actual_tgt}, pass={np.isclose(predicted_value, actual_tgt, atol=1e-6)}")
+
+	print(f"Tested {n_samples} samples. Passed: {n_passed}. Pass rate: {n_passed/n_samples:.2%}")
+	return n_samples, n_passed, n_passed/n_samples
 
 def validate_feature_scalers(scaled_data, feature_columns, target_column, scalers_dict, feature_axis=2):
 	"""

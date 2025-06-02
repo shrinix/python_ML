@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button, select { padding: 5px; margin: 5px; }
+    canvas { max-width: 100%; }
+    .tab {
+      overflow: hidden;
+      border-bottom: 1px solid #ccc;
+      margin-top: 20px;
+    }
+    .tab button {
+      background-color: #f1f1f1;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 10px 20px;
+      transition: 0.3s;
+      font-size: 16px;
+    }
+    .tab button.active {
+      background-color: #ccc;
+    }
+    .tabcontent {
+      display: none;
+      padding: 10px 0;
+    }
+    .tabcontent.active {
+      display: block;
+    }
+    #table table th, #table table td {
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <h2>Stock Viewer</h2>
+
+  <!-- Query Section -->
+  <div style="font-size: 20px;">
+    <label style="font-size: 20px;">Ticker:</label>
+    <select id="ticker" style="font-size: 20px; padding: 8px; height: 38px;"></select>
+    <label style="font-size: 20px;">Start:</label>
+    <input id="start" type="date" style="font-size: 20px; padding: 8px;" />
+    <label style="font-size: 20px;">End:</label>
+    <input id="end" type="date" style="font-size: 20px; padding: 8px;" />
+    <button onclick="fetchData()" style="font-size: 20px; padding: 8px 16px;">Query</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab">
+    <button class="tablinks active" onclick="openTab(event, 'Graph')">Graph</button>
+    <button class="tablinks" onclick="openTab(event, 'Table')">Table</button>
+  </div>
+
+  <!-- Tab content -->
+  <div id="Graph" class="tabcontent active">
+    <canvas id="chart"></canvas>
+  </div>
+  <div id="Table" class="tabcontent">
+    <div id="table"></div>
+    <div id="pagination" style="margin-top:10px; text-align:center;"></div>
+  </div>
+
+  <script>
+     let API_BASE_URL = "";
+
+    // Load config.json before making any API calls
+    async function loadConfig() {
+      const res = await fetch("config.json");
+      const config = await res.json();
+      API_BASE_URL = config.API_BASE_URL.replace(/\/$/, ""); // Remove trailing slash if any
+    }
+
+    // Wrap fetch to always use the API base URL
+    async function apiFetch(path, options) {
+      return fetch(API_BASE_URL + path, options);
+    }
+
+    let tableData = [];
+    let currentPage = 1;
+    const rowsPerPage = 25;
+
+    // Fetch tickers and min/max dates on page load
+    document.addEventListener("DOMContentLoaded", async function() {
+      await loadConfig(); // Load config.json and set API_BASE_URL
+      // Fetch tickers
+      const tickersRes = await apiFetch("/api/tickers");
+      const tickersData = await tickersRes.json();
+      const tickerSelect = document.getElementById("ticker");
+      tickerSelect.innerHTML = "";
+      tickersData.tickers.forEach(ticker => {
+        const opt = document.createElement("option");
+        opt.value = ticker;
+        opt.textContent = ticker;
+        tickerSelect.appendChild(opt);
+      });
+
+      // Fetch min/max dates
+      const datesRes = await apiFetch("/api/date_range");
+      const datesData = await datesRes.json();
+      document.getElementById("start").value = datesData.min_date;
+      document.getElementById("end").value = datesData.max_date;
+      document.getElementById("start").setAttribute("min", datesData.min_date);
+      document.getElementById("start").setAttribute("max", datesData.max_date);
+      document.getElementById("end").setAttribute("min", datesData.min_date);
+      document.getElementById("end").setAttribute("max", datesData.max_date);
+    });
+
+    function drawChart(data) {
+      const chartCanvas = document.getElementById("chart");
+      // Reduce chart height by 20%
+      chartCanvas.height = chartCanvas.height * 0.8;
+      const ctx = chartCanvas.getContext("2d");
+      const labels = data.map(d => d.Date);
+      const prices = data.map(d => d.Close);
+      const volumes = data.map(d => d.Volume);
+
+      if (window.myChart) window.myChart.destroy();
+      window.myChart = new Chart(ctx, {
+        type: "line",
+        options: {
+          scales: {
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'Close Price' }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Volume' }
+            }
+          }
+        },
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Close Price",
+              data: prices,
+              borderColor: "blue",
+              fill: false,
+              yAxisID: 'y'
+            },
+            {
+              label: "Volume",
+              data: volumes,
+              type: "bar",
+              backgroundColor: "rgba(255, 99, 132, 0.3)",
+              borderColor: "rgba(255, 99, 132, 1)",
+              yAxisID: 'y1'
+            }
+          ]
+        }
+      });
+    }
+
+     function drawTable(data) {
+      // Specify the desired column order
+      const columnOrder = ["Date", "High", "Low", "Open", "Close", "Adj Close", "Volume"];
+      let html = "<table border='1' cellspacing='0'><tr>";
+      columnOrder.forEach(k => html += `<th>${k}</th>`);
+      html += "</tr>";
+
+      data.forEach(row => {
+        html += "<tr>";
+        columnOrder.forEach(k => html += `<td>${row[k]}</td>`);
+        html += "</tr>";
+      });
+      html += "</table>";
+      document.getElementById("table").innerHTML = html;
+    }
+
+    function openTab(evt, tabName) {
+      // Hide all tabcontent
+      document.querySelectorAll('.tabcontent').forEach(tab => tab.classList.remove('active'));
+      // Remove active class from all tablinks
+      document.querySelectorAll('.tablinks').forEach(btn => btn.classList.remove('active'));
+      // Show the selected tab
+      document.getElementById(tabName).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+
+    function openTabByName(tabName) {
+      // Helper to programmatically open a tab by name
+      document.querySelectorAll('.tabcontent').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tablinks').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      document.querySelector(`.tab button[onclick*="${tabName}"]`).classList.add('active');
+    }
+
+    async function fetchData() {
+      const ticker = document.getElementById("ticker").value;
+      const start = document.getElementById("start").value;
+      const end = document.getElementById("end").value;
+
+      const res = await apiFetch("/api/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticker, start_date: start, end_date: end })
+      });
+      const result = await res.json();
+
+      if (result.status === "ok") {
+        tableData = result.data;
+        currentPage = 1;
+        drawChart(tableData);
+        drawTable(tableData, currentPage);
+        openTabByName('Table');
+      } else {
+        alert("No data found.");
+      }
+    }
+
+    function drawTable(data, page = 1) {
+      // Specify the desired column order
+      const columnOrder = ["Date", "High", "Low", "Open", "Close", "Adj Close", "Volume"];
+      let html = "<table border='1' cellspacing='0'><tr>";
+      columnOrder.forEach(k => html += `<th>${k}</th>`);
+      html += "</tr>";
+
+      // Pagination logic
+      const startIdx = (page - 1) * rowsPerPage;
+      const endIdx = Math.min(startIdx + rowsPerPage, data.length);
+      for (let i = startIdx; i < endIdx; i++) {
+        const row = data[i];
+        html += "<tr>";
+        columnOrder.forEach(k => html += `<td>${row[k]}</td>`);
+        html += "</tr>";
+      }
+      html += "</table>";
+      document.getElementById("table").innerHTML = html;
+
+      // Pagination controls
+      drawPagination(data.length, page);
+    }
+
+    function drawPagination(totalRows, page) {
+      const totalPages = Math.ceil(totalRows / rowsPerPage);
+      let html = "";
+      if (totalPages > 1) {
+        html += `<button onclick="changePage(1)" ${page === 1 ? "disabled" : ""}>&lt;&lt;</button>`;
+        html += `<button onclick="changePage(${page - 1})" ${page === 1 ? "disabled" : ""}>&lt;</button>`;
+        html += ` Page ${page} of ${totalPages} `;
+        html += `<button onclick="changePage(${page + 1})" ${page === totalPages ? "disabled" : ""}>&gt;</button>`;
+        html += `<button onclick="changePage(${totalPages})" ${page === totalPages ? "disabled" : ""}>&gt;&gt;</button>`;
+      }
+      document.getElementById("pagination").innerHTML = html;
+    }
+
+    // Expose changePage globally for inline onclick
+    window.changePage = function(page) {
+      const totalPages = Math.ceil(tableData.length / rowsPerPage);
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      drawTable(tableData, currentPage);
+    };
+  </script>
+</body>
+</html>

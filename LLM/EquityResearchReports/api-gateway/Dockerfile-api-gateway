@@ -1,0 +1,11 @@
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# Copy the built jar (adjust the name if needed)
+COPY target/spring-consul-service-0.0.1-SNAPSHOT.jar app.jar
+
+EXPOSE 8080
+
+# Use the 'local' profile by default
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=local"]
