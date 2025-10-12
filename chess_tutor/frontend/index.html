@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adaptive Chess Tutor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Adaptive Chess Tutor</h1>
+      <div class="controls">
+        <input id="query" placeholder="Ask about a topic..." />
+        <button id="ask">Explain</button>
+      </div>
+    </header>
+    <main>
+      <section class="left">
+        <h2>Games</h2>
+        <ul id="games"></ul>
+      </section>
+      <section class="right">
+        <h2 id="game-title">Select a game</h2>
+        <pre id="board" class="board"></pre>
+        <div class="nav">
+          <button id="prev">Prev</button>
+          <input id="ply" type="number" value="0" min="0" />
+          <button id="next">Next</button>
+        </div>
+        <pre id="san" class="san"></pre>
+        <h2>Explanation</h2>
+        <pre id="answer" class="answer"></pre>
+      </section>
+    </main>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
