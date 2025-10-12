@@ -12,6 +12,8 @@
 **/node_modules/
 **/__pycache__/
 *.keras
+*.png
+*.csv
 *.h5
 *.npy
 **/output-files/*
