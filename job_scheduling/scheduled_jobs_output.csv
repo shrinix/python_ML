@@ -1,0 +1,7 @@
+job_name,job_type,start_min,end_min,start_time,end_time,duration_min,priority,source
+A1,A,600,720,10:00,12:00,120,10,scheduled
+A2,A,780,1020,13:00,17:00,240,10,scheduled
+B1,B,555,720,09:15,12:00,165,9,scheduled
+B2,B,780,1020,13:00,17:00,240,9,scheduled
+CX,C,695,720,11:35,12:00,25,1,scheduled
+CY,C,780,1020,13:00,17:00,240,1,scheduled

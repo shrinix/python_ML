@@ -1,0 +1,8 @@
+
+job_type,job_name,priority
+A,A1,10
+A,A2,10
+B,B1,10
+B,B2,9
+C,CX,8
+C,CY,1
