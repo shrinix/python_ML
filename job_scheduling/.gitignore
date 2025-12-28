@@ -13,10 +13,8 @@
 **/__pycache__/
 *.keras
 *.png
-*.csv
 *.h5
 *.npy
 **/output-files/*
 **/source-files/*
-**/data/*
 **/target/*

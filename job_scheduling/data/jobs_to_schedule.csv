@@ -2,7 +2,17 @@
 job_type,job_name,priority
 A,A1,10
 A,A2,10
+A,A3,10
+A,A4,10
 B,B1,10
 B,B2,9
+B,B3,10
+B,B4,9
+B,B5,10
+B,B6,9
 C,CX,8
 C,CY,1
+C,C1,8
+C,C2,1
+C,C3,8
+C,C4,1
