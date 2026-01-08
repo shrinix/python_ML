@@ -1,0 +1,54 @@
+{
+  "tables": {
+    "orders": {
+      "columns": {
+        "order_id": "int",
+        "customer_id": "int",
+        "amount": "float"
+      },
+      "row_count": 1000000,
+      "primary_key": ["order_id"]
+    },
+    "customers": {
+      "columns": {
+        "id": "int",
+        "name": "string"
+      },
+      "row_count": 10000,
+      "primary_key": ["id"]
+    },
+    "payments": {
+      "columns": {
+        "payment_id": "int",
+        "order_id": "int",
+        "payment_date": "date",
+        "amount": "float"
+      },
+      "row_count": 1200000,
+      "primary_key": ["payment_id"]
+    },
+    "products": {
+      "columns": {
+        "product_id": "int",
+        "name": "string",
+        "price": "float"
+      },
+      "row_count": 5000,
+      "primary_key": ["product_id"]
+    }
+  },
+  "foreign_keys": [
+    {
+      "from_table": "orders",
+      "from_column": "customer_id",
+      "to_table": "customers",
+      "to_column": "id"
+    },
+    {
+      "from_table": "payments",
+      "from_column": "order_id",
+      "to_table": "orders",
+      "to_column": "order_id"
+    }
+  ]
+}

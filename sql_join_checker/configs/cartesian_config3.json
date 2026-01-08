@@ -1,0 +1,6 @@
+{
+  "name": "more_complex_cartesian_example_with_row_explosion",
+  "sql_file": "examples/cartesian_join/cartesian_example_3.sql",
+  "schema_file": "examples/cartesian_join/schema.json",
+  "sample_data_file": "examples/cartesian_join/sample_data_3.py"
+}

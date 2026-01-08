@@ -1,0 +1,5 @@
+{
+  "name": "multi_join_example",
+  "sql_file": "examples/multi_join/multi_join_query.sql",
+  "schema_file": "examples/multi_join/schema.json"
+}

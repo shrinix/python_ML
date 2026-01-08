@@ -1,0 +1,6 @@
+{
+  "name": "cartesian_example",
+  "sql_file": "examples/cartesian_join/cartesian_example.sql",
+  "schema_file": "examples/cartesian_join/schema.json",
+  "sample_data_file": "examples/cartesian_join/sample_data.py"
+}

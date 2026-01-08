@@ -1,0 +1,5 @@
+{
+  "name": "single_join_example",
+  "sql_file": "examples/single_join/single_join_query.sql",
+  "schema_file": "examples/single_join/schema.json"
+}
