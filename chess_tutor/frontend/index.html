@@ -1,39 +1,182 @@
+              <!-- FEN: Off button removed -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Adaptive Chess Tutor</title>
+  <!-- Inline favicon to avoid 404 from /favicon.ico on simple static servers -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%99%9F%EF%B8%8F%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="container">
     <header>
       <h1>Adaptive Chess Tutor</h1>
-      <div class="controls">
-        <input id="query" placeholder="Ask about a topic..." />
-        <button id="ask">Explain</button>
-      </div>
+      <nav class="nav">
+        <div class="dropdown">
+          <a class="nav-link active" href="./index.html">Games ▾</a>
+          <div class="dropdown-menu">
+            <button type="button" class="dropdown-item" id="dd-view-games">View Games</button>
+            <button type="button" class="dropdown-item" id="dd-upload-pdf">Upload PDF</button>
+            <button type="button" class="dropdown-item" id="dd-upload-pgn">Upload PGN</button>
+          </div>
+        </div>
+        <a class="nav-link" href="./admin.html">Admin</a>
+      </nav>
     </header>
     <main>
       <section class="left">
-        <h2>Games</h2>
-        <ul id="games"></ul>
+        <div class="panel" id="chat-panel" style="margin-bottom:12px">
+          <h2>Chat</h2>
+          <div id="chat-messages" class="small chat-box"></div>
+          <div class="chat-input-row">
+            <input id="chat-input" placeholder="Ask the tutor (RAG) about chess concepts or games..." />
+            <button id="chat-send">Send</button>
+          </div>
+        </div>
+        <!-- Tab widget replacing book explanation expander -->
+        <div class="tabs" id="info-tabs">
+          <div class="tab-headers">
+            <button class="tab-header active" data-tab="tab-explanation">Explanation</button>
+            <button class="tab-header" data-tab="tab-pgn-games">PGN Games</button>
+            <button class="tab-header" data-tab="tab-pdf-games">PDF Games</button>
+          </div>
+          <div class="tab-panels">
+            <div class="tab-panel active" id="tab-explanation">
+              <div class="explain-wrap">
+                <pre id="answer" class="answer collapsed"></pre>
+                <button id="toggle-explain" class="toggle">Show more</button>
+              </div>
+            </div>
+            <div class="tab-panel" id="tab-pgn-games">
+              <div class="small" style="margin-bottom:4px">Games loaded from PGN:</div>
+              <ul id="pgn-games-list" class="games-sublist"></ul>
+            </div>
+            <div class="tab-panel" id="tab-pdf-games">
+              <div class="small" style="margin-bottom:4px">Games loaded from PDF:</div>
+              <ul id="pdf-games-list" class="games-sublist"></ul>
+            </div>
+          </div>
+        </div>
+        <!-- Moved search and principle counts under tab widget -->
+        <div class="panel" id="search-panel" style="margin-top:12px;padding:8px;background:#111827;border:1px solid #1f2937;border-radius:8px">
+          <input id="game-search" class="search" placeholder="Search PDF games..." style="margin-bottom:8px" />
+          <div id="principle-counts" class="small" style="margin:0 0 4px"></div>
+        </div>
       </section>
       <section class="right">
         <h2 id="game-title">Select a game</h2>
-        <pre id="board" class="board"></pre>
-        <div class="nav">
-          <button id="prev">Prev</button>
-          <input id="ply" type="number" value="0" min="0" />
-          <button id="next">Next</button>
+        <div class="board-moves">
+          <div class="board-column">
+            <div id="board-wrap" class="board-wrap">
+              <div class="rank-labels">
+                <div>8</div>
+                <div>7</div>
+                <div>6</div>
+                <div>5</div>
+                <div>4</div>
+                <div>3</div>
+                <div>2</div>
+                <div>1</div>
+              </div>
+              <div class="board-layer">
+                <div id="board-ui" class="board-ui board-grid"></div>
+                <svg id="board-overlay" class="board-overlay" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+              </div>
+              <div class="file-labels">
+                <div>a</div>
+                <div>b</div>
+                <div>c</div>
+                <div>d</div>
+                <div>e</div>
+                <div>f</div>
+                <div>g</div>
+                <div>h</div>
+              </div>
+            </div>
+            <div id="board-nav" class="nav">
+              <button id="prev">Prev</button>
+              <input id="ply" type="number" value="0" min="0" />
+              <button id="next">Next</button>
+              <div class="spacer"></div>
+              <button id="toggle-variations" type="button" title="Toggle variations">Variations: Off</button>
+              <button id="toggle-overlays" type="button" title="Toggle visual overlays">Overlays: On</button>
+              <button id="export-pgn" title="Download current game as PGN">Export PGN</button>
+            </div>
+            <!-- FEN panel inserted below navigation -->
+            <div id="fen-string" style="margin:12px 0 0 0; text-align:center; font-size:15px; color:#222; background:none; border:none; padding:0;">
+              <span id="fen-text" style="color: #fff;"></span>
+            </div>
+            <div id="variations-panel" class="fen-section hidden">
+              <div class="fen-controls">
+                <span class="small">Variations at this ply</span>
+              </div>
+              <ul id="variations-list" style="margin:0;padding-left:18px"></ul>
+            </div>
+          </div>
+          <div class="moves-column">
+            <div class="tabs" id="moves-tabs">
+              <div class="tab-headers">
+                <button class="tab-header active" data-tab="tab-moves-pgn">PGN</button>
+                <button class="tab-header" data-tab="tab-moves-tactics">Tactics</button>
+                <button class="tab-header" data-tab="tab-moves-candidates">Candidates</button>
+              </div>
+              <div class="tab-panels">
+                <div class="tab-panel active" id="tab-moves-pgn">
+                  <h3>Moves (PGN)</h3>
+                  <pre id="pgn" class="pgn"></pre>
+                </div>
+                <div class="tab-panel" id="tab-moves-tactics">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                    <h3 style="margin:0">Tactics at This Position <span id="tactics-count" class="small" style="opacity:.85">(0)</span> <span id="tactics-debug" class="small" style="opacity:.6;margin-left:6px"></span></h3>
+                    <button id="show-tactics" class="small" title="Display tactics and overlays for the current position">Show Tactics</button>
+                  </div>
+                  <ul id="tactics-list" class="small" style="margin:0;padding-left:18px"></ul>
+                </div>
+                <div class="tab-panel" id="tab-moves-candidates">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                    <h3 style="margin:0">Candidate Moves <span id="candidates-count" class="small" style="opacity:.85">(0)</span></h3>
+                    <button id="show-candidates" class="small" title="Show top engine moves for this position">Show Candidates</button>
+                  </div>
+                  <ul id="candidate-list" class="small" style="margin:0;padding-left:18px"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <pre id="san" class="san"></pre>
-        <h2>Explanation</h2>
-        <pre id="answer" class="answer"></pre>
+        <!-- Principles tags moved below board+moves for compact panel -->
+        <div id="principles" class="principles" style="margin-top:8px"></div>
+        
+        <div id="ingest-summary" class="small" style="margin:4px 0 8px"></div>
+        <!-- Central games list removed; games shown in PDF / PGN tabs -->
       </section>
     </main>
   </div>
-  <script src="main.js"></script>
+  <script>
+    // Optional: allow overriding API base via ?api=http://host:port
+    const params = new URLSearchParams(location.search);
+    if(params.get('api')) window.API_BASE = params.get('api');
+  </script>
+  <!-- Hidden file inputs preserved for dropdown upload triggers -->
+  <input type="file" id="pdf-input" accept="application/pdf" style="display:none" />
+  <input type="file" id="pgn-input" accept=".pgn,text/plain" style="display:none" />
+  <input type="number" id="min-moves" value="8" min="2" style="display:none" />
+  <input id="source-name" placeholder="Source label" style="display:none" />
+  <!-- Position Summary Modal -->
+  <div id="position-summary-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="psm-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="psm-title">Position Summary Preview</h3>
+      </div>
+      <pre id="position-summary-text" class="modal-body"></pre>
+      <div class="modal-actions">
+        <button id="psm-cancel" class="small">Cancel</button>
+        <button id="psm-confirm" class="small">Send</button>
+      </div>
+    </div>
+  </div>
+  <script src="main.js?v=20260106"></script>
 </body>
 </html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Adaptive Chess Tutor</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%99%9F%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .admin-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+    .panel{background:#111827;border:1px solid #1f2937;border-radius:8px;padding:12px}
+    .row{display:flex;gap:8px;align-items:center;margin:6px 0}
+    .row input, .row select{padding:6px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e2e8f0}
+    .row button{padding:6px 10px;border:none;border-radius:6px;background:#4f46e5;color:white;cursor:pointer}
+    .status{font-size:12px;opacity:.8}
+    pre.small{white-space:pre-wrap;max-height:300px;overflow:auto}
+    ul.examples{list-style:none;padding:0;margin:0;height:260px;overflow-y:auto;overflow-x:hidden}
+    ul.examples li{padding:6px;border-bottom:1px solid #1f2937}
+    ul.examples a{color:#93c5fd;text-decoration:none}
+    ul.examples a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Admin</h1>
+      <nav class="nav">
+        <a class="nav-link" href="./index.html">Games</a>
+        <a class="nav-link active" href="./admin.html">Admin</a>
+      </nav>
+    </header>
+    <main class="admin-grid">
+      <section class="panel" id="chat-llm-panel">
+        <h2>Chat / LLM</h2>
+        <div class="row">
+          <label style="display:flex;align-items:center;gap:8px">
+            <input id="llm-enabled" type="checkbox" /> Enable LLM (generative answers)
+          </label>
+            <button id="btn-llm-apply">Apply</button>
+        </div>
+        <div class="row">
+          <span class="status" id="llm-status"></span>
+        </div>
+        <h2 style="margin-top:18px">Tactics / Engine</h2>
+        <div class="row">
+          <input id="tc-min-pawns" type="number" step="0.1" placeholder="Min advantage (pawns)" style="width:200px" />
+          <input id="tc-max-len" type="number" min="1" placeholder="Max tactic length" style="width:160px" />
+        </div>
+        <div class="row">
+          <input id="tc-max-lines" type="number" min="1" max="10" placeholder="Engine MultiPV lines" style="width:200px" />
+          <input id="tc-depth" type="number" min="1" placeholder="Engine depth" style="width:160px" />
+          <input id="tc-movetime" type="number" min="100" placeholder="Movetime (ms)" style="width:180px" />
+        </div>
+        <div class="row">
+          <input id="tc-candidate-max-len" type="number" min="1" placeholder="Candidate max length" style="width:200px" />
+        </div>
+        <div class="row">
+          <button id="btn-tc-apply">Apply</button>
+          <span class="status" id="tc-status"></span>
+        </div>
+        <!-- Merged Examples widgets directly below Chat/LLM configuration -->
+        <h2 style="margin-top:18px">Examples</h2>
+        <div class="row">
+          <select id="e-principle"></select>
+          <input id="e-game" placeholder="Game ID" />
+          <input id="e-ply" type="number" placeholder="Ply" style="width:100px" />
+        </div>
+        <div class="row">
+          <input id="e-fen" placeholder="FEN" style="flex:1" />
+        </div>
+        <div class="row">
+          <input id="e-san" placeholder="SAN (solution for bestmove)" style="flex:1" />
+          <button id="btn-add-example">Add Example</button>
+        </div>
+        <div class="row">
+          <button id="btn-rebuild">Rebuild from games</button>
+          <label style="display:flex;align-items:center;gap:6px"><input id="rebuild-clear" type="checkbox" /> clear</label>
+          <input id="rebuild-max" type="number" placeholder="max_games" style="width:120px" />
+          <span class="status" id="e-status"></span>
+        </div>
+        <div class="row">
+          <button id="btn-dedup">Deduplicate examples</button>
+          <span class="status" id="dedup-status"></span>
+        </div>
+        <div class="row">
+          <input id="ex-limit" type="number" placeholder="limit" value="20" style="width:100px" />
+          <button id="btn-load-examples">Load Examples</button>
+        </div>
+        <ul id="examples" class="examples"></ul>
+      </section>
+      <section class="panel" id="principles-panel">
+        <h2>Principles</h2>
+        <div class="row">
+          <input id="p-id" placeholder="Principle ID (e.g., MinorityAttack)" />
+          <input id="p-name" placeholder="Display name" />
+        </div>
+        <div class="row">
+          <input id="p-desc" placeholder="Description (optional)" style="flex:1" />
+          <button id="btn-upsert">Upsert</button>
+        </div>
+        <div class="row">
+          <button id="btn-resync-all" title="Reload games, sync registry, rebuild and dedup examples">Resync All</button>
+          <span class="status" id="p-status"></span>
+        </div>
+        <div class="row" style="margin-top:4px">
+          <button id="btn-clear-pgn" title="Remove all uploaded PGN games">Clear PGN Games</button>
+          <span class="status" id="clear-pgn-status"></span>
+        </div>
+        <pre id="principles" class="small"></pre>
+        <!-- Moved PDF spans debug directly under Principles -->
+        <h2 style="margin-top:18px">PDF spans (debug)</h2>
+        <div class="row">
+          <input id="sp-game-id" placeholder="game_id (e.g., ...pdf-G1)" style="flex:1" />
+        </div>
+        <div class="row">
+          <input id="sp-source" placeholder="source PDF filename (optional if game_id given)" style="flex:1" />
+          <input id="sp-page" type="number" min="1" placeholder="page (optional)" style="width:140px" />
+          <button id="btn-dump-spans">Dump spans</button>
+        </div>
+        <pre id="spans-output" class="small"></pre>
+      </section>
+    </main>
+  </div>
+  <script>
+    const API_BASE = window.API_BASE || 'http://localhost:8000';
+    async function fetchJSON(url, opts={}){
+      const res = await fetch(url, {headers:{'Content-Type':'application/json'}, ...opts});
+      if(!res.ok){ throw new Error(await res.text() || res.statusText); }
+      return res.json();
+    }
+    async function refreshPrinciples(){
+      const data = await fetchJSON(`${API_BASE}/principles`);
+      document.getElementById('principles').textContent = JSON.stringify(data, null, 2);
+      // populate dropdown
+      const sel = document.getElementById('e-principle');
+      const prev = sel.value;
+      sel.innerHTML = '';
+      for(const p of data){
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${p.examples})`;
+        sel.appendChild(opt);
+      }
+      // try to preserve previous selection
+      if(prev && Array.isArray(data) && data.some(x=>x.id===prev)){
+        sel.value = prev;
+      }else if(data && data.length){
+        sel.value = data[0].id;
+      }
+    }
+    function exampleLink(rec){
+      const principleId = document.getElementById('e-principle')?.value || '';
+      // Show the position BEFORE the example move so detected principles align with indexing
+      const atPly = Math.max(0, (parseInt(rec.ply, 10) || 0) - 1);
+      const params = new URLSearchParams({game: rec.game_id, ply: String(atPly), api: API_BASE});
+      if(principleId) params.set('principle', principleId);
+      return `./index.html?${params.toString()}`;
+    }
+    async function loadExamples(){
+      const pid = document.getElementById('e-principle').value.trim();
+      const limit = parseInt(document.getElementById('ex-limit').value||'20',10) || 20;
+      const status = document.getElementById('e-status');
+      if(!pid){ status.textContent = 'Pick a principle first'; return; }
+      try{
+        status.textContent = 'Loading examples...';
+        const data = await fetchJSON(`${API_BASE}/principles/${encodeURIComponent(pid)}/examples?limit=${limit}`);
+        const ul = document.getElementById('examples');
+        ul.innerHTML = '';
+        if(!data || !data.length){
+          ul.innerHTML = '<li class="small">No examples</li>';
+          status.textContent = '';
+          return;
+        }
+        for(const rec of data){
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = exampleLink(rec);
+          a.textContent = `${rec.game_id} @ ply ${rec.ply} — SAN: ${rec.san}`;
+          a.target = '_blank';
+          li.appendChild(a);
+          ul.appendChild(li);
+        }
+        status.textContent = '';
+      }catch(e){
+        status.textContent = e.message;
+      }
+    }
+    const E = id => document.getElementById(id);
+    const on = (id, handler) => { const el = E(id); if(el) el.onclick = handler; };
+
+    on('btn-upsert', async ()=>{
+      const id = document.getElementById('p-id').value.trim();
+      const name = document.getElementById('p-name').value.trim();
+      const description = document.getElementById('p-desc').value.trim();
+      try{
+        await fetchJSON(`${API_BASE}/author/principles/upsert`, {method:'POST', body: JSON.stringify({id, name, description})});
+        document.getElementById('p-status').textContent = 'Saved';
+        await refreshPrinciples();
+      }catch(e){ document.getElementById('p-status').textContent = e.message; }
+    });
+    on('btn-refresh-principles', async ()=>{
+      await refreshPrinciples();
+      await loadExamples();
+    });
+    on('btn-sync-principles', async ()=>{
+      const st = document.getElementById('p-status');
+      try{
+        st.textContent = 'Syncing...';
+        await fetchJSON(`${API_BASE}/author/sync_principles`, {method:'POST'});
+        st.textContent = 'Synced';
+        await refreshPrinciples();
+      }catch(e){ st.textContent = e.message; }
+    });
+    on('btn-reload-games', async ()=>{
+      const st = document.getElementById('p-status');
+      try{
+        st.textContent = 'Reloading games...';
+        const res = await fetchJSON(`${API_BASE}/author/reload_games`, {method:'POST'});
+        st.textContent = `Reloaded games: ${res.games ?? 'ok'}`;
+        // After reload, you likely want to rebuild examples
+        // Do a quick refresh of principles list to update example counts after a manual rebuild
+        await refreshPrinciples();
+      }catch(e){ st.textContent = e.message; }
+    });
+    on('btn-add-example', async ()=>{
+      const principle_id = document.getElementById('e-principle').value.trim();
+      const game_id = document.getElementById('e-game').value.trim();
+      const ply = parseInt(document.getElementById('e-ply').value||'0',10);
+      const fen = document.getElementById('e-fen').value.trim();
+      const san = document.getElementById('e-san').value.trim();
+      try{
+        await fetchJSON(`${API_BASE}/author/examples/add`, {method:'POST', body: JSON.stringify({principle_id, game_id, ply, fen, san})});
+        document.getElementById('e-status').textContent = 'Example added';
+        await loadExamples();
+      }catch(e){ document.getElementById('e-status').textContent = e.message; }
+    });
+    on('btn-rebuild', async ()=>{
+      const clear = document.getElementById('rebuild-clear').checked;
+      const max_games = parseInt(document.getElementById('rebuild-max').value||'0',10) || undefined;
+      try{
+        await fetchJSON(`${API_BASE}/author/rebuild_from_games`, {method:'POST', body: JSON.stringify({clear, max_games})});
+        document.getElementById('e-status').textContent = 'Rebuilt from games';
+        await refreshPrinciples();
+        await loadExamples();
+      }catch(e){ document.getElementById('e-status').textContent = e.message; }
+    });
+    on('btn-load-examples', loadExamples);
+    const sel = E('e-principle'); if(sel){ sel.addEventListener('change', loadExamples); }
+    on('btn-dedup', async ()=>{
+      const st = document.getElementById('dedup-status');
+      try{
+        st.textContent = 'Deduplicating...';
+        await fetchJSON(`${API_BASE}/author/dedup_examples`, {method:'POST'});
+        st.textContent = 'Done';
+        await refreshPrinciples();
+        await loadExamples();
+      }catch(e){ st.textContent = e.message; }
+    });
+    on('btn-resync-all', async ()=>{
+      const st = document.getElementById('p-status');
+      try{
+        st.textContent = 'Resyncing...';
+        const res = await fetchJSON(`${API_BASE}/author/resync_all`, {method:'POST'});
+        st.textContent = `Games: ${res.games}, Principles: ${res.principles}, Examples: ${res.examples}`;
+        await refreshPrinciples();
+        await loadExamples();
+      }catch(e){ st.textContent = e.message; }
+    });
+
+    on('btn-clear-pgn', async ()=>{
+      const st = document.getElementById('clear-pgn-status');
+      try{
+        st.textContent = 'Clearing PGN games...';
+        const res = await fetchJSON(`${API_BASE}/author/clear_pgn_games`, {method:'POST'});
+        st.textContent = `Removed ${res.removed}, Remaining ${res.remaining}`;
+        // After clearing, reload games and refresh principle counts
+        try{ await fetchJSON(`${API_BASE}/author/reload_games`, {method:'POST'}); }catch(_){ }
+        await refreshPrinciples();
+        await loadExamples();
+      }catch(e){ st.textContent = e.message; }
+    });
+
+    // ===== Chat / LLM controls =====
+    async function refreshLLMStatus(){
+      const st = document.getElementById('llm-status');
+      try{
+        const data = await fetchJSON(`${API_BASE}/admin/llm_status`, { cache: 'no-store' });
+        const chk = document.getElementById('llm-enabled');
+        if(chk) chk.checked = !!data.enabled;
+        st.textContent = `Enabled: ${!!data.enabled} | Provider: ${data.provider} | Model: ${data.model} | API key present: ${!!data.api_key_present}`;
+      }catch(e){
+        st.textContent = e.message || String(e);
+      }
+    }
+    on('btn-llm-apply', async ()=>{
+      const st = document.getElementById('llm-status');
+      const chk = document.getElementById('llm-enabled');
+      try{
+        st.textContent = 'Applying...';
+        await fetchJSON(`${API_BASE}/admin/llm_toggle`, { method:'POST', body: JSON.stringify({ enable: !!chk.checked }) });
+        await refreshLLMStatus();
+      }catch(e){ st.textContent = e.message; }
+    });
+
+    // ===== Tactics / Engine config =====
+    async function refreshTacticsConfig(){
+      const st = document.getElementById('tc-status');
+      try{
+        const cfg = await fetchJSON(`${API_BASE}/admin/tactics_config`);
+        const minPawns = (Number(cfg.min_cp||0) / 100).toFixed(1);
+        const maxLen = Number(cfg.max_len||0);
+        const maxLines = Number(cfg.max_lines||0);
+        const depth = Number(cfg.depth||0);
+        const mt = Number(cfg.movetime_ms||0);
+        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = String(val||''); };
+        setVal('tc-min-pawns', minPawns);
+        setVal('tc-max-len', maxLen);
+        setVal('tc-max-lines', maxLines);
+        setVal('tc-depth', depth);
+        setVal('tc-movetime', mt||'');
+        setVal('tc-candidate-max-len', Number(cfg.candidate_max_len||0));
+        st.textContent = `Min ≥ ${minPawns} pawns | Len ≤ ${maxLen} | MultiPV ${maxLines} | depth ${depth}${mt?` | movetime ${mt}ms`:''}`;
+      }catch(e){ st.textContent = e.message; }
+    }
+    on('btn-tc-apply', async ()=>{
+      const st = document.getElementById('tc-status');
+      try{
+        st.textContent = 'Applying...';
+        const minPawns = parseFloat(document.getElementById('tc-min-pawns').value||'');
+        const maxLen = parseInt(document.getElementById('tc-max-len').value||'');
+        const maxLines = parseInt(document.getElementById('tc-max-lines').value||'');
+        const depth = parseInt(document.getElementById('tc-depth').value||'');
+        const mt = parseInt(document.getElementById('tc-movetime').value||'');
+        const payload = {};
+        if(!Number.isNaN(minPawns)) payload.min_cp = Math.round(minPawns * 100);
+        if(!Number.isNaN(maxLen)) payload.max_len = maxLen;
+        if(!Number.isNaN(maxLines)) payload.max_lines = maxLines;
+        if(!Number.isNaN(depth)) payload.depth = depth;
+        if(!Number.isNaN(mt)) payload.movetime_ms = mt;
+        const candLen = parseInt(document.getElementById('tc-candidate-max-len').value||'');
+        if(!Number.isNaN(candLen)) payload.candidate_max_len = candLen;
+        await fetchJSON(`${API_BASE}/admin/tactics_config`, { method:'POST', body: JSON.stringify(payload) });
+        await refreshTacticsConfig();
+      }catch(e){ st.textContent = e.message; }
+    });
+
+    on('btn-dump-spans', async ()=>{
+      const game_id = (document.getElementById('sp-game-id')?.value || '').trim();
+      const source = (document.getElementById('sp-source')?.value || '').trim();
+      const pageStr = (document.getElementById('sp-page')?.value || '').trim();
+      const out = document.getElementById('spans-output');
+      try{
+        const params = new URLSearchParams();
+        if(game_id) params.set('game_id', game_id);
+        if(source) params.set('source', source);
+        if(pageStr){ const n = parseInt(pageStr, 10); if(n>0) params.set('page', String(n)); }
+        if(!game_id && !source){ out.textContent = 'Provide game_id or source'; return; }
+        out.textContent = 'Fetching spans...';
+        const data = await fetchJSON(`${API_BASE}/author/dump_spans?${params.toString()}`);
+        out.textContent = JSON.stringify(data, null, 2);
+      }catch(e){ out.textContent = e.message; }
+    });
+
+    // initial load
+    Promise.all([refreshPrinciples(), loadExamples(), refreshLLMStatus(), refreshTacticsConfig()]).catch(()=>{});
+  </script>
+</body>
+</html>

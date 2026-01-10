@@ -1,0 +1,125 @@
+{
+  "principles": [
+    {
+      "id": "OpenFiles",
+      "name": "Open Files",
+      "module": "open_files",
+      "detector": "detect",
+      "description": "Rook activity on files with no pawns.",
+      "aliases": ["OpenFile", "Open_File"]
+    },
+    {
+      "id": "Outposts",
+      "name": "Outposts",
+      "module": "outposts",
+      "detector": "detect",
+      "description": "Advanced knights on squares not chased by enemy pawns.",
+      "aliases": ["Outpost"]
+    },
+    {
+      "id": "BishopPair",
+      "name": "Bishop Pair",
+      "module": "bishop_pair",
+      "detector": "detect",
+      "description": "Two bishops on opposite colors vs. opponent with one bishop.",
+      "aliases": ["BishopsPair", "BishopPairs"]
+    },
+    {
+      "id": "PassedPawn",
+      "name": "Passed Pawn",
+      "module": "passed_pawn",
+      "detector": "detect",
+      "description": "Pawn with no enemy pawns ahead on adjacent files.",
+      "aliases": ["PassedPawns"]
+    },
+    {
+      "id": "RookBehindPassedPawn",
+      "name": "Rook Behind Passed Pawn",
+      "module": "rook_behind_passed",
+      "detector": "detect",
+      "description": "Rook behind its own passed pawn.",
+      "aliases": ["RookBehindPawn", "RookBehindPassedPawns"]
+    },
+    {
+      "id": "SpaceAdvantage",
+      "name": "Space Advantage",
+      "module": "space_advantage",
+      "detector": "detect",
+      "description": "More controlled squares in the opponent's half (attacked squares beyond the midline).",
+      "aliases": ["Space", "SpaceAdv"]
+    },
+    {
+      "id": "IsolatedPawn",
+      "name": "Isolated Pawn",
+      "module": "isolated_pawn",
+      "detector": "detect",
+      "description": "Pawn with no friendly pawns on adjacent files.",
+      "aliases": ["IsolatedPawns"]
+    },
+    {
+      "id": "BackwardPawn",
+      "name": "Backward Pawn",
+      "module": "backward_pawn",
+      "detector": "detect",
+      "description": "Pawn that cannot be supported by adjacent pawns and has its forward square controlled by enemy pawns.",
+      "aliases": ["BackwardPawns", "Backward_Pawn"]
+    },
+    {
+      "id": "DoubledPawns",
+      "name": "Doubled Pawns",
+      "module": "doubled_pawns",
+      "detector": "detect",
+      "description": "Two or more pawns of the same color on the same file.",
+      "aliases": ["DoubledPawn", "Doubled_Pawns"]
+    }
+    ,
+    {
+      "id": "MaterialAdvantage",
+      "name": "Material Advantage",
+      "module": "material_advantage",
+      "detector": "detect",
+      "description": "One side has more material (piece value) than the other; lists captured opposing pieces responsible for the lead.",
+      "aliases": ["MaterialLead", "UpMaterial", "Material"]
+    }
+    ,
+    {
+      "id": "AttackedPieces",
+      "name": "Attacked Pieces",
+      "module": "attacked_pieces",
+      "detector": "detect",
+      "description": "Pieces of the side to move that are currently attacked by the opponent who just moved; red arrows from attacker to each attacked piece.",
+      "visualize": "visualize",
+      "aliases": ["AttackedPiece", "Attacked", "UnderAttack"]
+    }
+      ,
+      {
+        "id": "KingCheck",
+        "name": "King Check",
+        "module": "king_check",
+        "detector": "detect",
+        "description": "Detects when the side to move is in check; highlights the king square and shows attackers.",
+        "visualize": "visualize",
+        "aliases": ["Check", "InCheck"]
+      }
+      ,
+      {
+        "id": "Checkmate",
+        "name": "Checkmate",
+        "module": "checkmate",
+        "detector": "detect",
+        "description": "Detects when the side to move is checkmated; highlights the king square and shows final attacking lines.",
+        "visualize": "visualize",
+        "aliases": ["Mate", "Checkmated"]
+      }
+      ,
+      {
+        "id": "Tactics",
+        "name": "Tactics",
+        "module": "tactics_principle",
+        "detector": "detect",
+        "description": "Immediate tactical opportunities (mate-in-1, checks, hanging captures) for the side to move.",
+        "visualize": "visualize",
+        "aliases": ["Tactic", "Tactical", "TacticsNow"]
+      }
+  ]
+}
