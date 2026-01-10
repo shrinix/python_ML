@@ -1,0 +1,19 @@
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+import json
+
+
+def build_vector_store():
+    with open("data/runbooks.json") as f:
+        runbooks = json.load(f)
+    with open("data/historical_incidents.json") as f:
+        history = json.load(f)
+
+    documents = []
+    for r in runbooks:
+        documents.append(f"Runbook {r['type']}: {r['guidance']}")
+    for h in history:
+        documents.append(f"Incident: {h['incident']} Resolution: {h['resolution']}")
+
+    embeddings = OpenAIEmbeddings()
+    return FAISS.from_texts(documents, embeddings)
