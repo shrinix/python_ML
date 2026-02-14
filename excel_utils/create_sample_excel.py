@@ -1,6 +1,6 @@
 from openpyxl import Workbook
 from pathlib import Path
-p = Path('/Users/shriniwasiyengar/git/python_utils/excel_utils/sample.xlsx')
+p = Path('/excel_utils/sample.xlsx')
 wb = Workbook()
 ws = wb.active
 ws.title = 'Sheet1'
